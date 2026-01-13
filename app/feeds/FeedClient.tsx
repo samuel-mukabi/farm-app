@@ -79,16 +79,20 @@ export function FeedManagementModals({ feedTypes, crops }: { feedTypes: FeedType
                             )}
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Quantity (kg)</label>
+                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                                    {activeModal === 'usage' ? 'Quantity (kg)' : 'Quantity (Bags)'}
+                                </label>
                                 <input
                                     type="number"
                                     step="0.1"
-                                    name="quantity_kg"
+                                    name={activeModal === 'usage' ? 'quantity_kg' : 'quantity_bags'}
                                     required
-                                    placeholder="e.g. 50"
+                                    placeholder={activeModal === 'usage' ? 'e.g. 50' : 'e.g. 2'}
                                     className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
                                 />
-                                <p className="text-[10px] text-neutral-400 italic">Tip: One bag is usually 50kg.</p>
+                                <p className="text-[10px] text-neutral-400 italic">
+                                    {activeModal === 'usage' ? 'Tip: One bag is usually 50kg.' : 'Tip: Inventory is tracked in kg (1 bag = 50kg).'}
+                                </p>
                             </div>
 
                             <button

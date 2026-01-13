@@ -34,12 +34,17 @@ const FeedInventoryCard = ({ feedType }: { feedType: FeedType }) => {
 
 const FeedLogItem = ({ log, feedTypes }: { log: FeedLog, feedTypes: FeedType[] }) => {
     const feedType = feedTypes.find(ft => ft.id === log.feed_type_id);
+    const bags = (log.quantity_kg / 50).toFixed(1);
+
     return (
         <tr className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
             <td className="py-4 px-4 text-sm font-medium text-neutral-900">{log.action}</td>
             <td className="py-4 px-4 text-sm text-neutral-600 font-medium">{feedType?.name || 'Unknown'}</td>
             <td className={`py-4 px-4 text-sm font-bold ${log.action === 'Restock' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                {log.action === 'Restock' ? '+' : '-'}{log.quantity_kg} kg
+                <div className="flex flex-col">
+                    <span>{log.action === 'Restock' ? '+' : '-'}{log.quantity_kg} kg</span>
+                    <span className="text-[10px] font-medium text-neutral-400 capitalize">({bags} bags)</span>
+                </div>
             </td>
             <td className="py-4 px-4 text-sm text-neutral-500">
                 {new Date(log.log_date).toLocaleDateString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}

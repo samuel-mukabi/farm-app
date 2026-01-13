@@ -54,9 +54,11 @@ export async function restockFeed(formData: FormData) {
     if (!user) throw new Error("Unauthorized");
 
     const feed_type_id = formData.get("feed_type_id") as string;
-    const quantity_kg = parseFloat(formData.get("quantity_kg") as string);
+    const quantity_bags = parseFloat(formData.get("quantity_bags") as string);
 
-    if (isNaN(quantity_kg) || quantity_kg <= 0) throw new Error("Invalid quantity");
+    if (isNaN(quantity_bags) || quantity_bags <= 0) throw new Error("Invalid quantity");
+
+    const quantity_kg = quantity_bags * 50;
 
     // 1. Create log entry
     const { error: logError } = await supabase
@@ -82,7 +84,7 @@ export async function restockFeed(formData: FormData) {
             .from('feed_types')
             .update({
                 current_stock_kg: newStock,
-                reorder_level_kg: quantity_kg / 50 // Optional: update reorder level to last restock amount in bags
+                reorder_level_kg: quantity_bags // Storing the actual bag count from last restock
             })
             .eq('id', feed_type_id);
     }

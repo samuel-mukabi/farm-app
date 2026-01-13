@@ -10,7 +10,7 @@ export default function LandingPage() {
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
                         <Cpu className="w-6 h-6 text-black" />
                     </div>
-                    <span className="text-xl font-black tracking-tighter uppercase italic">Samuel&#39;s</span>
+                    <span className="text-xl font-black tracking-tighter uppercase italic sm:hidden">Samuel&#39;s</span>
                 </div>
                 <div className="hidden md:flex items-center gap-10">
                     {['Intelligence', 'Hardware', 'Network'].map((item) => (
