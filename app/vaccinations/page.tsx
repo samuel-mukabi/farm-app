@@ -1,39 +1,48 @@
-import { CheckCircle2, Clock, Info, Plus, Search, Syringe } from "lucide-react";
+import { CheckCircle2, Clock, Info, Search, Syringe } from "lucide-react";
 import { createClient } from "@/supabase/server";
-import { Vaccination } from "@/types/farm";
+import { Vaccination, Crop } from "@/types/farm";
+import { ScheduleVaccineModal, VaccinationActions } from "./VaccinationClient";
 
-const VaccinationRow = ({ vaccination }: { vaccination: Vaccination }) => (
+interface VaccinationWithCrop extends Vaccination {
+    crops: { name: string } | null;
+}
+
+const VaccinationRow = ({ vaccination }: { vaccination: VaccinationWithCrop }) => (
     <tr className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
-        <td className="py-4 px-6 text-sm font-bold text-neutral-900">Crop: {vaccination.crop_id.slice(0, 8)}</td>
+        <td className="py-4 px-6 text-sm font-bold text-neutral-900">{vaccination.crops?.name || 'Unknown Crop'}</td>
         <td className="py-4 px-6 text-sm text-neutral-600 font-medium">{vaccination.vaccine_name}</td>
-        <td className="py-4 px-6 text-sm text-neutral-500">{new Date(vaccination.target_date).toLocaleDateString()}</td>
+        <td className="py-4 px-6 text-sm text-neutral-500">{new Date(vaccination.target_date).toLocaleDateString(undefined, { dateStyle: 'medium' })}</td>
         <td className="py-4 px-6">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${vaccination.status === 'Administered' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${vaccination.status === 'Administered' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                 vaccination.status === 'Pending' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
                     'bg-red-50 text-red-600 border border-red-100'
                 }`}>
                 {vaccination.status}
             </span>
         </td>
+        <td className="py-4 px-6">
+            <VaccinationActions id={vaccination.id} status={vaccination.status} />
+        </td>
     </tr>
 );
 
-const MOCK_VACCINATIONS: Vaccination[] = [
-    { id: "1", crop_id: "batch-827", vaccine_name: "Mareks Disease", target_date: "2026-01-12", status: "Administered" },
-    { id: "2", crop_id: "batch-826", vaccine_name: "Gumboro (IBD)", target_date: "2026-01-15", status: "Pending" },
-    { id: "3", crop_id: "batch-825", vaccine_name: "Newcastle Disease", target_date: "2026-01-10", status: "Missed" },
-    { id: "4", crop_id: "batch-824", vaccine_name: "Fowl Pox", target_date: "2026-01-20", status: "Pending" },
-    { id: "5", crop_id: "batch-823", vaccine_name: "Infectious Bronchitis", target_date: "2026-01-05", status: "Administered" },
-];
-
 export default async function Page() {
     const supabase = await createClient();
+
+    // Fetch vaccinations with crop names
     const { data: fetchedVaccinations } = await supabase
         .from('vaccinations')
-        .select('*')
+        .select('*, crops(name)')
         .order('target_date', { ascending: true });
 
-    const vaccinations = fetchedVaccinations || MOCK_VACCINATIONS;
+    // Fetch active crops for scheduling
+    const { data: activeCrops } = await supabase
+        .from('crops')
+        .select('id, name')
+        .eq('status', 'Active');
+
+    const vaccinations = (fetchedVaccinations || []) as VaccinationWithCrop[];
+    const crops = (activeCrops || []) as Crop[];
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -43,9 +52,7 @@ export default async function Page() {
                     <p className="text-neutral-500 mt-2 text-lg">Track and schedule vaccinations for all active batches.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-                        <Plus className="w-4 h-4" /> Schedule Vaccine
-                    </button>
+                    <ScheduleVaccineModal crops={crops} />
                 </div>
             </header>
 
@@ -56,9 +63,9 @@ export default async function Page() {
                         <h3 className="font-bold text-neutral-900">Administered</h3>
                     </div>
                     <p className="text-3xl font-black text-neutral-900">
-                        {vaccinations?.filter(v => v.status === 'Administered').length || 0}
+                        {vaccinations.filter(v => v.status === 'Administered').length}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1 font-bold">Total</p>
+                    <p className="text-xs text-neutral-400 mt-1 font-bold uppercase tracking-widest">Total</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
@@ -66,9 +73,9 @@ export default async function Page() {
                         <h3 className="font-bold text-neutral-900">Pending</h3>
                     </div>
                     <p className="text-3xl font-black text-neutral-900">
-                        {vaccinations?.filter(v => v.status === 'Pending').length || 0}
+                        {vaccinations.filter(v => v.status === 'Pending').length}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1 font-bold">Remaining</p>
+                    <p className="text-xs text-neutral-400 mt-1 font-bold uppercase tracking-widest">Remaining</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm border-l-4 border-l-red-500">
                     <div className="flex items-center gap-3 mb-4">
@@ -76,9 +83,9 @@ export default async function Page() {
                         <h3 className="font-bold text-neutral-900">Missed</h3>
                     </div>
                     <p className="text-3xl font-black text-neutral-900">
-                        {vaccinations?.filter(v => v.status === 'Missed').length || 0}
+                        {vaccinations.filter(v => v.status === 'Missed').length}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1 font-bold">Requires Attention</p>
+                    <p className="text-xs text-neutral-400 mt-1 font-bold uppercase tracking-widest">Requires Attention</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
@@ -86,9 +93,9 @@ export default async function Page() {
                         <h3 className="font-bold text-neutral-900">Types</h3>
                     </div>
                     <p className="text-3xl font-black text-neutral-900">
-                        {new Set(vaccinations?.map(v => v.vaccine_name)).size}
+                        {new Set(vaccinations.map(v => v.vaccine_name)).size}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1 font-bold">Vaccines Used</p>
+                    <p className="text-xs text-neutral-400 mt-1 font-bold uppercase tracking-widest">Vaccines Used</p>
                 </div>
             </div>
 
@@ -100,27 +107,28 @@ export default async function Page() {
                         <input
                             type="text"
                             placeholder="Filter by batch..."
-                            className="pl-10 pr-4 py-1.5 bg-neutral-50 border border-neutral-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+                            className="pl-10 pr-4 py-1.5 bg-neutral-50 border border-neutral-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 w-48"
                         />
                     </div>
                 </div>
                 {!vaccinations || vaccinations.length === 0 ? (
                     <div className="p-20 text-center">
-                        <p className="text-neutral-500 font-medium">No vaccinations scheduled yet.</p>
+                        <p className="text-neutral-500 font-medium italic">No vaccinations scheduled yet.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                                 <tr className="bg-neutral-50">
-                                    <th className="py-4 px-6 text-xs font-bold text-neutral-400 uppercase tracking-wider">Batch ID</th>
-                                    <th className="py-4 px-6 text-xs font-bold text-neutral-400 uppercase tracking-wider">Vaccine Type</th>
-                                    <th className="py-4 px-6 text-xs font-bold text-neutral-400 uppercase tracking-wider">Date</th>
-                                    <th className="py-4 px-6 text-xs font-bold text-neutral-400 uppercase tracking-wider">Status</th>
+                                    <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Crop Name</th>
+                                    <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Vaccine Type</th>
+                                    <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Target Date</th>
+                                    <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Status</th>
+                                    <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {vaccinations.map((v: Vaccination) => (
+                                {vaccinations.map((v: VaccinationWithCrop) => (
                                     <VaccinationRow key={v.id} vaccination={v} />
                                 ))}
                             </tbody>

@@ -1,19 +1,49 @@
-import { BarChart, Download, FileText, Filter, PieChart, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart, Download, FileText, Filter, PieChart, TrendingDown, TrendingUp, Syringe, Utensils, Bird } from "lucide-react";
+import { createClient } from "@/supabase/server";
 
-const ReportCard = ({ title, value, change, trend }: { title: string, value: string, change: string, trend: 'up' | 'down' }) => (
-    <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm">
-        <h3 className="text-sm font-bold text-neutral-400 uppercase tracking-wider">{title}</h3>
-        <div className="mt-2 flex items-baseline gap-3">
-            <span className="text-3xl font-black text-neutral-900">{value}</span>
-            <span className={`text-xs font-bold flex items-center gap-0.5 ${trend === 'up' ? 'text-emerald-500' : 'text-red-500'}`}>
-                {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                {change}
-            </span>
+const ReportCard = ({ title, value, change, trend, icon: Icon }: { title: string, value: string, change?: string, trend?: 'up' | 'down', icon?: any }) => (
+    <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm relative overflow-hidden group">
+        <div className="flex justify-between items-start mb-4">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none">{title}</h3>
+            {Icon && <Icon className="w-4 h-4 text-neutral-300 group-hover:text-neutral-900 transition-colors" />}
+        </div>
+        <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-black text-neutral-900 tracking-tight">{value}</span>
+            {change && (
+                <span className={`text-[10px] font-bold flex items-center gap-0.5 ${trend === 'up' ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {trend === 'up' ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+                    {change}
+                </span>
+            )}
         </div>
     </div>
 );
 
-const Page = () => {
+const Page = async () => {
+    const supabase = await createClient();
+
+    // 1. Fetch data for aggregations
+    const { data: crops } = await supabase.from('crops').select('id, total_chicks, status');
+    const { data: logs } = await supabase.from('daily_logs').select('mortality, feed_consumed_kg, avg_weight_g');
+    const { data: vaccines } = await supabase.from('vaccinations').select('id, status');
+
+    const totalInitialChicks = crops?.reduce((sum, c) => sum + (c.total_chicks || 0), 0) || 0;
+    const totalMortality = logs?.reduce((sum, l) => sum + (l.mortality || 0), 0) || 0;
+    const totalFeed = logs?.reduce((sum, l) => sum + (l.feed_consumed_kg || 0), 0) || 0;
+    const administeredVaccines = vaccines?.filter(v => v.status === 'Administered').length || 0;
+
+    const mortalityRate = totalInitialChicks > 0 ? (totalMortality / totalInitialChicks) * 100 : 0;
+    const avgFeedPerBird = totalInitialChicks > 0 ? totalFeed / totalInitialChicks : 0;
+
+    // Growth Trend Mock (for now, or use last 6 crops)
+    const { data: recentCrops } = await supabase
+        .from('crops')
+        .select('name, total_chicks')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+    const chartData = recentCrops?.reverse() || [];
+
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
@@ -22,93 +52,96 @@ const Page = () => {
                     <p className="text-neutral-500 mt-2 text-lg">In-depth performance analysis and farm productivity reports.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="bg-white border border-neutral-200 text-neutral-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-neutral-50 transition-colors">
+                    <button className="bg-white border border-neutral-200 text-neutral-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-neutral-50 transition-colors uppercase tracking-widest text-[10px]">
                         <Filter className="w-4 h-4" /> Filter
                     </button>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-                        <Download className="w-4 h-4" /> Export Report
+                    <button className="bg-neutral-900 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-sm uppercase tracking-widest text-[10px]">
+                        <Download className="w-4 h-4" /> Export
                     </button>
                 </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                <ReportCard title="Avg. Growth Rate" value="+12.5%" change="2.1%" trend="up" />
-                <ReportCard title="Feed Conversion" value="1.65" change="0.05" trend="down" />
-                <ReportCard title="Mortality Rate" value="1.2%" change="0.4%" trend="down" />
-                <ReportCard title="Est. Revenue" value="$42.5k" change="15%" trend="up" />
+                <ReportCard title="Total Capacity" value={totalInitialChicks.toLocaleString()} icon={Bird} />
+                <ReportCard title="Avg. Feed Used" value={`${avgFeedPerBird.toFixed(1)}kg`} change="Bird/Cycle" trend="down" icon={Utensils} />
+                <ReportCard title="Mortality Rate" value={`${mortalityRate.toFixed(1)}%`} change="Overall" trend="down" icon={TrendingDown} />
+                <ReportCard title="Vaccination Coverage" value={`${administeredVaccines}/${vaccines?.length || 0}`} icon={Syringe} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <section className="bg-white p-8 rounded-2xl border border-neutral-100 shadow-sm">
+                <section className="bg-white p-8 rounded-2xl border border-neutral-100 shadow-sm transition-all hover:shadow-md">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-xl font-bold text-neutral-900">Production Trends</h2>
-                            <p className="text-sm text-neutral-400 font-medium">Monthly chick production vs targets</p>
+                            <h2 className="text-xl font-bold text-neutral-900">Historical Production</h2>
+                            <p className="text-sm text-neutral-400 font-medium">Initial chick count for last 6 batches</p>
                         </div>
-                        <BarChart className="w-6 h-6 text-neutral-300" />
+                        <BarChart className="w-6 h-6 text-neutral-200" />
                     </div>
                     <div className="h-64 flex items-end justify-between px-2 gap-4">
-                        {[40, 70, 55, 90, 65, 80].map((h, i) => (
-                            <div key={i} className="group relative flex-1 flex flex-col items-center">
-                                <div className="absolute -top-8 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
-                                    {h}%
+                        {chartData.length > 0 ? chartData.map((crop, i) => {
+                            const maxVal = Math.max(...chartData.map(c => c.total_chicks), 1);
+                            const height = (crop.total_chicks / maxVal) * 100;
+                            return (
+                                <div key={i} className="group relative flex-1 flex flex-col items-center h-full justify-end">
+                                    <div className="absolute -top-8 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                                        {crop.total_chicks.toLocaleString()}
+                                    </div>
+                                    <div className="w-full bg-neutral-100 rounded-t-sm group-hover:bg-neutral-900 transition-all cursor-crosshair" style={{ height: `${height}%` }}></div>
+                                    <span className="mt-4 text-[8px] font-black text-neutral-400 uppercase truncate w-full text-center">{crop.name.split(' ')[0]}</span>
                                 </div>
-                                <div className="w-full bg-blue-50 rounded-t-lg group-hover:bg-blue-500 transition-colors" style={{ height: `${h}%` }}></div>
-                                <span className="mt-4 text-[10px] font-bold text-neutral-400 uppercase">Month {i + 1}</span>
-                            </div>
-                        ))}
+                            );
+                        }) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-400 italic text-sm">Insufficient data for chart.</div>
+                        )}
                     </div>
                 </section>
 
-                <section className="bg-white p-8 rounded-2xl border border-neutral-100 shadow-sm">
+                <section className="bg-white p-8 rounded-2xl border border-neutral-100 shadow-sm transition-all hover:shadow-md">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-xl font-bold text-neutral-900">Cost Distribution</h2>
-                            <p className="text-sm text-neutral-400 font-medium">Breakdown of operational expenses</p>
+                            <h2 className="text-xl font-bold text-neutral-900">Health Overview</h2>
+                            <p className="text-sm text-neutral-400 font-medium">Mortality vs. Survival ratio across all time</p>
                         </div>
-                        <PieChart className="w-6 h-6 text-neutral-300" />
+                        <PieChart className="w-6 h-6 text-neutral-200" />
                     </div>
-                    <div className="flex flex-col sm:flex-row items-center gap-12">
-                        <div className="relative w-48 h-48 rounded-full border-[16px] border-neutral-50 flex items-center justify-center">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-12 py-4">
+                        <div className="relative w-40 h-40 rounded-full border-[12px] border-neutral-50 flex items-center justify-center">
                             <div className="text-center">
-                                <span className="block text-2xl font-black text-neutral-900">$24k</span>
-                                <span className="text-[10px] font-bold text-neutral-400 uppercase">Total Cost</span>
+                                <span className="block text-2xl font-black text-neutral-900">{((1 - mortalityRate / 100) * 100).toFixed(0)}%</span>
+                                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Survival</span>
                             </div>
-                            <svg className="absolute inset-[-16px] w-[212px] h-[212px] -rotate-90">
-                                <circle cx="106" cy="106" r="94" fill="none" stroke="#3b82f6" strokeWidth="16" strokeDasharray="300 600" />
-                                <circle cx="106" cy="106" r="94" fill="none" stroke="#10b981" strokeWidth="16" strokeDasharray="150 600" strokeDashoffset="-300" />
+                            <svg className="absolute inset-[-12px] w-[184px] h-[184px] -rotate-90">
+                                <circle cx="92" cy="92" r="86" fill="none" stroke="#e5e5e5" strokeWidth="12" />
+                                <circle
+                                    cx="92"
+                                    cy="92"
+                                    r="86"
+                                    fill="none"
+                                    stroke="#10b981"
+                                    strokeWidth="12"
+                                    strokeDasharray={`${(1 - mortalityRate / 100) * 540} 540`}
+                                />
                             </svg>
                         </div>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                <span className="text-sm font-bold text-neutral-600">Feed (55%)</span>
+                        <div className="flex flex-col gap-6">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                    <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Surviving ({(totalInitialChicks - totalMortality).toLocaleString()})</span>
+                                </div>
+                                <p className="text-[10px] text-neutral-400 font-medium pl-6">Healthy and productive stock</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                                <span className="text-sm font-bold text-neutral-600">Vaccines (25%)</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 rounded-full bg-neutral-200"></div>
-                                <span className="text-sm font-bold text-neutral-600">Others (20%)</span>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                                    <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Mortality ({totalMortality.toLocaleString()})</span>
+                                </div>
+                                <p className="text-[10px] text-neutral-400 font-medium pl-6">Loss due to various factors</p>
                             </div>
                         </div>
                     </div>
                 </section>
             </div>
-
-            <section className="mt-12 bg-neutral-900 rounded-2xl p-8 text-white relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div>
-                        <h2 className="text-2xl font-black tracking-tight mb-2">Generate Custom Report</h2>
-                        <p className="text-neutral-400 font-medium">Select specific parameters and time ranges for a detailed PDF report.</p>
-                    </div>
-                    <button className="bg-white text-black px-8 py-3 rounded-xl font-black hover:bg-neutral-100 transition-colors flex items-center gap-3 shadow-xl">
-                        <FileText className="w-5 h-5 text-blue-600" /> Configure & Download
-                    </button>
-                </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-            </section>
         </div>
     );
 };

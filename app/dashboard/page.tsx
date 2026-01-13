@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/supabase/server";
 import { Crop, FeedLog, FeedType, Vaccination } from "@/types/farm";
+import { ClipboardList, Plus } from "lucide-react";
 
 interface DashboardFeedLog extends FeedLog {
     feed_types: { name: string } | null;
@@ -40,12 +41,12 @@ const ActivityRow = ({ action, date, details }: { action: string, date: string, 
     </tr>
 );
 
-const CropCard = ({ id, count, type, date, status, actualHarvestDate }: { id: string, count: string, type: string, date: string, status: string, actualHarvestDate?: string }) => {
+const CropCard = ({ id, name, count, type, date, status, actualHarvestDate }: { id: string, name: string, count: string, type: string, date: string, status: string, actualHarvestDate?: string }) => {
     const isCompleted = status === 'Completed';
     return (
         <Link href={`/crops/${id}`} className="card p-6 hover:border-neutral-200 cursor-pointer group block">
             <div className="flex justify-between items-start mb-4">
-                <span className="text-xs font-bold text-neutral-400">{id}</span>
+                <span className="text-xs font-bold text-neutral-400">{name}</span>
                 {isCompleted && (
                     <span className="text-[10px] bg-emerald-50 px-2 py-1 rounded-sm text-emerald-600 font-bold uppercase tracking-wider border border-emerald-100">
                         Harvested
@@ -87,7 +88,7 @@ const Page = async () => {
     const totalPresentChicks = typedCrops
         ?.filter(crop => crop.status === 'Active')
         ?.reduce((sum: number, crop: { present_chicks?: number }) => sum + (crop.present_chicks ?? 0), 0) ?? 0;
-    const activeCropNumber = activeCrop ? typedCrops ? typedCrops.length - typedCrops.indexOf(activeCrop) : 0 : 0;
+    const activeCropNumber = activeCrop ? (typedCrops ? typedCrops.length - typedCrops.indexOf(activeCrop) : 0) : 0;
 
     // 2. Fetch Feed Inventory & Logs
     const { data: feedTypesData } = await supabase.from("feed_types").select("*");
@@ -97,12 +98,12 @@ const Page = async () => {
         .from("feed_logs")
         .select("*, feed_types(name)")
         .order("log_date", { ascending: false })
-        .limit(5);
+        .limit(10);
 
-    const feedLogs = feedLogsData as DashboardFeedLog[] | null;
+    const feedLogs = (feedLogsData as DashboardFeedLog[] | null) || [];
 
     const totalFeedStock = feedTypes?.reduce((sum, type) => sum + (Number(type.current_stock_kg) || 0), 0) ?? 0;
-    const lowStockAlerts = feedTypes?.filter(t => ((Number(t.current_stock_kg) || 0) / 50) < 5) ?? [];
+    const lowStockAlerts = feedTypes?.filter(t => ((Number(t.current_stock_kg) || 0) / 50) <= 5) ?? [];
 
     // 3. Fetch Vaccinations
     const { data: vaccinationsData } = await supabase
@@ -110,23 +111,23 @@ const Page = async () => {
         .select("*, crops(name)")
         .order("target_date", { ascending: true });
 
-    const vaccinations = vaccinationsData as DashboardVaccination[] | null;
+    const vaccinations = (vaccinationsData as DashboardVaccination[] | null) || [];
 
-    const nextVaccination = vaccinations?.find(v => v.status === 'Pending');
-    const missedVaccinations = vaccinations?.filter(v => v.status === 'Missed') ?? [];
+    const nextVaccination = vaccinations.find(v => v.status === 'Pending');
+    const missedVaccinations = vaccinations.filter(v => v.status === 'Missed');
 
     // 4. Activity Normalization
     const activities = [
-        ...(feedLogs?.map(log => ({
+        ...feedLogs.map(log => ({
             action: log.action === 'Restock' ? 'Feed Restocked' : 'Feed Used',
             date: new Date(log.log_date).toLocaleDateString(),
             details: `${log.quantity_kg}kg of ${log.feed_types?.name || 'feed'} ${log.action === 'Restock' ? 'added' : 'consumed'}`
-        })) || []),
-        ...(vaccinations?.filter(v => v.status === 'Administered').map(v => ({
+        })),
+        ...vaccinations.filter(v => v.status === 'Administered').map(v => ({
             action: 'Vaccine Administered',
             date: new Date(v.administered_at || v.target_date).toLocaleDateString(),
             details: `${v.vaccine_name} for Crop ${v.crops?.name || 'Unknown'}`
-        })) || [])
+        }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
     // 5. Daily Logs for Chart (Last 7 days/entries for currently active crop)
@@ -144,39 +145,41 @@ const Page = async () => {
 
     return (
         <div className="p-8 max-w-7xl mx-auto">
-            <header className="mb-10">
-                <h1 className="text-3xl font-extrabold text-neutral-900 tracking-tight">Farm Overview</h1>
-                <p className="text-neutral-500 mt-2 text-lg">Real-time performance and critical alerts for your poultry farm.</p>
+            <header className="mb-10 flex justify-between items-end">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-neutral-900 tracking-tight">Farm Overview</h1>
+                    <p className="text-neutral-500 mt-2 text-lg">Real-time performance and critical alerts for your poultry farm.</p>
+                </div>
+                <Link href="/crops/new_crop" className="btn-primary flex items-center gap-2">
+                    <Plus className="w-5 h-5" /> New Batch
+                </Link>
             </header>
 
-            {/* 3.2 Top Summary Cards */}
+            {/* Top Summary Cards */}
             <section className="mb-12">
                 <div className="mb-6">
-                    <h2 className="text-xl font-bold text-neutral-800">Key Metrics of Current Crop</h2>
+                    <h2 className="text-xl font-bold text-neutral-800">Key Metrics</h2>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <SummaryCard title="Current Bird Count" value={totalPresentChicks.toLocaleString()} />
-                    <SummaryCard title="Current Crop" value={activeCrop ? `#${activeCropNumber}` : 'None'} />
-                    <SummaryCard title="Remaining Feed (kg)" value={totalFeedStock.toLocaleString()} />
+                    <SummaryCard title="Active Crop" value={activeCrop ? `#${activeCropNumber}` : 'None'} />
+                    <SummaryCard title="Feed Balance (bags)" value={`${(totalFeedStock / 50).toFixed(1)}`} />
                     <SummaryCard title="Next Vaccination" value={nextVaccination ? new Date(nextVaccination.target_date).toLocaleDateString() : 'None Scheduled'} />
                 </div>
             </section>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-12">
-                {/* 3.3 Alerts Section */}
+                {/* Alerts Section */}
                 <section className="lg:col-span-1">
                     <div className="mb-6">
                         <h2 className="text-xl font-bold text-neutral-800">Critical Alerts</h2>
                     </div>
                     <div className="card p-2">
-                        {lowStockAlerts.map(alert => {
-                            const bagsLeft = (Number(alert.current_stock_kg) || 0) / 50;
-                            return (
-                                <AlertCard key={alert.id} message={`Low feed: ${alert.name} stock is ${bagsLeft.toFixed(1)} bags left`} type="error" />
-                            );
-                        })}
+                        {lowStockAlerts.map(alert => (
+                            <AlertCard key={alert.id} message={`Low feed: ${alert.name} stock is ${((Number(alert.current_stock_kg) || 0) / 50).toFixed(1)} bags left`} type="error" />
+                        ))}
                         {missedVaccinations.map(v => (
-                            <AlertCard key={v.id} message={`Missed Vaccination: ${v.vaccine_name}`} type="warning" />
+                            <AlertCard key={v.id} message={`Missed Vaccination: ${v.vaccine_name} for ${v.crops?.name}`} type="warning" />
                         ))}
                         {lowStockAlerts.length === 0 && missedVaccinations.length === 0 && (
                             <AlertCard message="All operations are running smoothly. No critical alerts." type="success" />
@@ -184,19 +187,19 @@ const Page = async () => {
                     </div>
                 </section>
 
-                {/* 3.4 Charts Section */}
+                {/* Charts Section */}
                 <section className="lg:col-span-2">
                     <div className="mb-6">
                         <h2 className="text-xl font-bold text-neutral-800">Recent Feed Consumption (kg)</h2>
                     </div>
-                    <div className="card p-6 h-55 flex items-end gap-4 justify-around">
+                    <div className="card p-6 h-64 flex items-end gap-4 justify-around">
                         {chartData.length > 0 ? chartData.map((data, i) => {
                             const maxVal = Math.max(...chartData.map(d => d.val as number), 1);
                             const height = (Number(data.val) / maxVal) * 100;
                             return (
                                 <div key={i} className="flex flex-col items-center gap-2 w-full max-w-10">
                                     <div
-                                        className="w-full bg-neutral-100 rounded-t-sm hover:bg-neutral-200 transition-colors"
+                                        className="w-full bg-neutral-100 rounded-t-sm hover:bg-neutral-900 transition-colors"
                                         style={{ height: `${height}%` }}
                                         title={`${data.val}kg`}
                                     ></div>
@@ -212,10 +215,10 @@ const Page = async () => {
                 </section>
             </div>
 
-            {/* 3.5 Recent Activity Log */}
+            {/* Recent Activity Log */}
             <section className="mb-12">
                 <div className="mb-6">
-                    <h2 className="text-xl font-bold text-neutral-800">Recent Activity Log</h2>
+                    <h2 className="text-xl font-bold text-neutral-800">Recent Activity</h2>
                 </div>
                 <div className="card overflow-hidden">
                     {activities.length > 0 ? (
@@ -247,11 +250,12 @@ const Page = async () => {
                     <h2 className="text-xl font-bold text-neutral-800">Crop History</h2>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {typedCrops && typedCrops.length > 0 ? typedCrops.map((crop) => (
+                    {typedCrops && typedCrops.length > 0 ? typedCrops.slice(0, 6).map((crop) => (
                         <CropCard
                             key={crop.id}
-                            id={crop.name}
-                            count={crop.present_chicks.toString()}
+                            id={crop.id}
+                            name={crop.name}
+                            count={crop.total_chicks.toString()}
                             type="Chicks"
                             date={crop.expected_harvest_date ? new Date(crop.expected_harvest_date).toLocaleDateString() : 'N/A'}
                             status={crop.status}
