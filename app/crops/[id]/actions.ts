@@ -28,7 +28,6 @@ export async function recordDailyLog(cropId: string, data: {
     c1_bags?: number,
     c2_bags?: number,
     c3_bags?: number,
-    water_consumed_liters?: number,
     avg_weight_g?: number,
     notes?: string
 }) {
@@ -109,7 +108,6 @@ export async function recordDailyLog(cropId: string, data: {
             .update({
                 mortality: (existingLog.mortality || 0) + data.mortality,
                 feed_consumed_kg: (existingLog.feed_consumed_kg || 0) + totalFeedKg,
-                water_consumed_liters: (existingLog.water_consumed_liters || 0) + (data.water_consumed_liters || 0),
                 avg_weight_g: data.avg_weight_g || existingLog.avg_weight_g,
                 notes: data.notes ? (existingLog.notes ? `${existingLog.notes}\n${data.notes}` : data.notes) : existingLog.notes
             })
@@ -123,7 +121,6 @@ export async function recordDailyLog(cropId: string, data: {
                 log_date: today,
                 mortality: data.mortality,
                 feed_consumed_kg: totalFeedKg,
-                water_consumed_liters: data.water_consumed_liters,
                 avg_weight_g: data.avg_weight_g,
                 notes: data.notes
             });
