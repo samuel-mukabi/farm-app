@@ -4,15 +4,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname
 
-    // Allow public routes and auth callback
-    if (
-        pathname === '/' ||
-        pathname.startsWith('/login') ||
-        pathname.startsWith('/register') ||
-        pathname.startsWith('/auth')
-    ) {
-        return NextResponse.next()
-    }
     let supabaseResponse = NextResponse.next({
         request,
     })
@@ -44,7 +35,21 @@ export async function middleware(request: NextRequest) {
 
     // Refresh session if expired - required for Server Components
     // https://supabase.com/docs/guides/auth/server-side/nextjs
-    await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Redirect authenticated users from public pages to dashboard
+    if (user && (
+        pathname === '/' ||
+        pathname.startsWith('/login') ||
+        pathname.startsWith('/register')
+    )) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // Redirect unauthenticated users from protected pages to login
+    if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/auth') && pathname !== '/') {
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
 
     return supabaseResponse
 }

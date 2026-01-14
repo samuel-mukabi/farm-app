@@ -2,29 +2,26 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { login } from "@/supabase/auth"
+import { signInAction } from "../actions"
 import { ArrowRight, Lock, Mail, Loader2, AlertCircle } from "lucide-react"
 
 export default function LoginPage() {
-    const router = useRouter()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsLoading(true)
         setError(null)
 
-        const { error: authError } = await login(email, password)
-
-        if (authError) {
-            setError(authError.message)
+        const formData = new FormData(e.currentTarget)
+        try {
+            await signInAction(formData)
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "An error occurred")
             setIsLoading(false)
-        } else {
-            router.push("/dashboard")
         }
     }
 
@@ -51,6 +48,7 @@ export default function LoginPage() {
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-300 group-focus-within:text-neutral-900 transition-colors" />
                                 <input
                                     type="email"
+                                    name="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
@@ -69,6 +67,7 @@ export default function LoginPage() {
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-300 group-focus-within:text-neutral-900 transition-colors" />
                                 <input
                                     type="password"
+                                    name="password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}

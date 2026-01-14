@@ -2,54 +2,28 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { register } from "@/supabase/auth"
-import { ArrowRight, Lock, Mail, User, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { signUpAction } from "../actions"
+import { ArrowRight, Lock, Mail, User, Loader2, AlertCircle } from "lucide-react"
 
 export default function RegisterPage() {
-    const router = useRouter()
     const [fullName, setFullName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [isSuccess, setIsSuccess] = useState(false)
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsLoading(true)
         setError(null)
 
-        const { error: authError } = await register(email, password, fullName)
-
-        if (authError) {
-            setError(authError.message)
+        const formData = new FormData(e.currentTarget)
+        try {
+            await signUpAction(formData)
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "An error occurred")
             setIsLoading(false)
-        } else {
-            setIsSuccess(true)
-            setIsLoading(false)
-            // Optional: Auto-login or redirect after a delay
-            setTimeout(() => {
-                router.push("/login")
-            }, 3000)
         }
-    }
-
-    if (isSuccess) {
-        return (
-            <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center p-6 text-center">
-                <div className="bg-white rounded-2xl border border-neutral-100 shadow-xl p-10 max-w-sm w-full animate-in zoom-in-95 duration-500">
-                    <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle2 className="w-8 h-8" />
-                    </div>
-                    <h2 className="text-2xl font-black text-neutral-900 mb-2">Account Created!</h2>
-                    <p className="text-neutral-500 font-medium mb-8">Please check your email to verify your account before logging in.</p>
-                    <Link href="/login" className="text-sm font-bold text-neutral-900 border-b-2 border-neutral-900 pb-1">
-                        Go to Sign In
-                    </Link>
-                </div>
-            </div>
-        )
     }
 
     return (
@@ -75,6 +49,7 @@ export default function RegisterPage() {
                                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-300 group-focus-within:text-neutral-900 transition-colors" />
                                 <input
                                     type="text"
+                                    name="full_name"
                                     required
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
@@ -90,6 +65,7 @@ export default function RegisterPage() {
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-300 group-focus-within:text-neutral-900 transition-colors" />
                                 <input
                                     type="email"
+                                    name="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
@@ -105,6 +81,7 @@ export default function RegisterPage() {
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-300 group-focus-within:text-neutral-900 transition-colors" />
                                 <input
                                     type="password"
+                                    name="password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}

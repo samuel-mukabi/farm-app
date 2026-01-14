@@ -126,7 +126,6 @@ export default function NewCropPage() {
                         .insert({
                             name: feed.name,
                             current_stock_kg: feed.count * 50,
-                            reorder_level_kg: feed.count, // Storing bag count here as requested
                             user_id: user.id
                         })
                         .select('id')
@@ -136,8 +135,7 @@ export default function NewCropPage() {
                     await supabase
                         .from('feed_types')
                         .update({
-                            current_stock_kg: Number(currentStock) + (feed.count * 50),
-                            reorder_level_kg: feed.count
+                            current_stock_kg: Number(currentStock) + (feed.count * 50)
                         })
                         .eq('id', typeId);
                 }

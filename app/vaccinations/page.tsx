@@ -29,6 +29,14 @@ const VaccinationRow = ({ vaccination }: { vaccination: VaccinationWithCrop }) =
 export default async function Page() {
     const supabase = await createClient();
 
+    // Update missed vaccinations (where target_date < today and status is still 'Pending')
+    const today = new Date().toISOString().split('T')[0];
+    await supabase
+        .from('vaccinations')
+        .update({ status: 'Missed' })
+        .eq('status', 'Pending')
+        .lt('target_date', today);
+
     // Fetch vaccinations with crop names
     const { data: fetchedVaccinations } = await supabase
         .from('vaccinations')

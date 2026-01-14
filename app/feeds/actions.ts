@@ -105,3 +105,69 @@ export async function logFeedUsage(formData: FormData) {
     }
 }
 
+export async function restockFeed(formData: FormData) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Unauthorized");
+
+    const bagCounts: Record<string, number> = {
+        'C1': parseInt(formData.get("c1_bags") as string) || 0,
+        'C2': parseInt(formData.get("c2_bags") as string) || 0,
+        'C3': parseInt(formData.get("c3_bags") as string) || 0,
+    };
+
+    if (Object.values(bagCounts).every(count => count === 0)) {
+        throw new Error("Please specify at least one bag for restocking");
+    }
+
+    // 1. Create log entry
+    const { error: logError } = await supabase
+        .from('feed_logs')
+        .insert({
+            action: 'Restock',
+            c1_bags: bagCounts['C1'],
+            c2_bags: bagCounts['C2'],
+            c3_bags: bagCounts['C3'],
+            log_date: new Date().toISOString()
+        });
+
+    if (logError) throw new Error(logError.message);
+
+    // 2. Update individual feed_types stock
+    for (const [name, count] of Object.entries(bagCounts)) {
+        if (count > 0) {
+            const { data: feedType } = await supabase
+                .from('feed_types')
+                .select('id, current_stock_kg')
+                .eq('name', name)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (feedType) {
+                const newStock = (feedType.current_stock_kg || 0) + (count * 50);
+                const { error: updateError } = await supabase
+                    .from('feed_types')
+                    .update({ current_stock_kg: newStock })
+                    .eq('id', feedType.id);
+
+                if (updateError) throw new Error(updateError.message);
+            } else {
+                // If feed type doesn't exist, create it (handles initial setup)
+                const { error: insertError } = await supabase
+                    .from('feed_types')
+                    .insert({
+                        user_id: user.id,
+                        name: name,
+                        current_stock_kg: count * 50
+                    });
+
+                if (insertError) throw new Error(insertError.message);
+            }
+        }
+    }
+
+    revalidatePath('/feeds');
+    revalidatePath('/dashboard');
+}
+
