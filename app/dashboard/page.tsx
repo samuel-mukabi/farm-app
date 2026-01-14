@@ -180,11 +180,18 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
 
     const activeCropsDisplay = activeCrops.length > 0 ? (
         <div className="flex flex-col gap-1">
-            {activeCrops.slice(0, 2).map((crop) => (
-                <p key={crop.id} className="text-2xl font-bold text-neutral-900 truncate" title={crop.name}>
-                    {crop.name}
-                </p>
-            ))}
+            {activeCrops.slice(0, 2).map((crop) => {
+                const arrival = new Date(crop.arrival_date);
+                const now = new Date();
+                const diffTime = Math.abs(now.getTime() - arrival.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                return (
+                    <p key={crop.id} className="text-2xl font-bold text-neutral-900 truncate" title={crop.name}>
+                        {crop.name} <span className="text-lg text-neutral-400 font-medium">(Day {diffDays})</span>
+                    </p>
+                );
+            })}
             {activeCrops.length > 2 && (
                 <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mt-1">
                     +{activeCrops.length - 2} more...
@@ -306,6 +313,13 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
                         {userProfile?.farm_name ? `${userProfile.farm_name}'s Overview` : "Farm Overview"}
+                        {activeCrops.length > 0 && (() => {
+                            const arrival = new Date(activeCrops[0].arrival_date);
+                            const now = new Date();
+                            const diffTime = now.getTime() - arrival.getTime();
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            return <span className="text-neutral-400 font-medium"> - Day {diffDays}</span>
+                        })()}
                     </h1>
                     <p className="text-neutral-500 mt-2 text-base sm:text-lg">Real-time performance and critical alerts for your poultry farm.</p>
                 </div>

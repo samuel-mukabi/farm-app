@@ -49,7 +49,7 @@ const FeedLogItem = ({ log, feedTypes }: { log: FeedLog, feedTypes: FeedType[] }
             <td className="py-4 px-4 text-sm text-neutral-600 font-medium">{feedType?.name || 'Multi-type Log'}</td>
             <td className={`py-4 px-4 text-sm font-bold ${log.action === 'Restock' ? 'text-emerald-600' : 'text-amber-600'}`}>
                 <div className="flex flex-col">
-                    <span>{log.action === 'Restock' ? '+' : '-'}{totalKg} kg</span>
+                    <span>{log.action === 'Restock' ? '+' : '-'}{totalBags} bags</span>
                     <span className="text-[10px] font-medium text-neutral-400 capitalize">({bagDetails || '0 bags'})</span>
                 </div>
             </td>

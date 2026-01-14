@@ -11,7 +11,7 @@ export async function logFeedUsage(formData: FormData) {
 
     const crop_id = formData.get("crop_id") as string || null;
 
-    const bagCounts = {
+    const bagCounts: Record<string, number> = {
         'C1': parseInt(formData.get("c1_bags") as string) || 0,
         'C2': parseInt(formData.get("c2_bags") as string) || 0,
         'C3': parseInt(formData.get("c3_bags") as string) || 0,
@@ -21,27 +21,89 @@ export async function logFeedUsage(formData: FormData) {
         throw new Error("Please specify at least one bag");
     }
 
-    try {
-        const { error } = await supabase.rpc('log_feed_usage_atomic', {
-            p_crop_id: crop_id,
-            p_c1_bags: bagCounts['C1'],
-            p_c2_bags: bagCounts['C2'],
-            p_c3_bags: bagCounts['C3'],
-            p_action: 'Usage',
-            p_log_date: new Date().toISOString()
+    // 0. Stock Validation
+    for (const [name, count] of Object.entries(bagCounts)) {
+        if (count > 0) {
+            const { data: feedType } = await supabase
+                .from('feed_types')
+                .select('name, current_stock_kg')
+                .eq('name', name)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (!feedType || (feedType.current_stock_kg || 0) < (count * 50)) {
+                const availableBags = Math.floor((feedType?.current_stock_kg || 0) / 50);
+                throw new Error(`Insufficient stock for ${name}: Required ${count} bags, but only ${availableBags} bags remaining.`);
+            }
+        }
+    }
+
+    // 1. Create log entry
+    const { error: logError } = await supabase
+        .from('feed_logs')
+        .insert({
+            crop_id,
+            action: 'Usage',
+            c1_bags: bagCounts['C1'],
+            c2_bags: bagCounts['C2'],
+            c3_bags: bagCounts['C3'],
+            log_date: new Date().toISOString()
         });
 
-        if (error) {
-            console.error("RPC Error:", error);
-            throw new Error(error.message);
+    if (logError) throw new Error(logError.message);
+
+    // 2. Update individual feed_types stock
+    for (const [name, count] of Object.entries(bagCounts)) {
+        if (count > 0) {
+            const { data: feedType } = await supabase
+                .from('feed_types')
+                .select('id, current_stock_kg')
+                .eq('name', name)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (feedType) {
+                const newStock = (feedType.current_stock_kg || 0) - (count * 50);
+                await supabase
+                    .from('feed_types')
+                    .update({ current_stock_kg: newStock })
+                    .eq('id', feedType.id);
+            }
         }
-    } catch (e: any) {
-        throw new Error(`Usage log failed: ${e.message}`);
+    }
+
+    // 3. Sync with daily_logs if crop_id exists
+    if (crop_id) {
+        const totalFeedKg = Object.values(bagCounts).reduce((sum, count) => sum + (count * 50), 0);
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data: existingDailyLog } = await supabase
+            .from('daily_logs')
+            .select('*')
+            .eq('crop_id', crop_id)
+            .eq('log_date', today)
+            .maybeSingle();
+
+        if (existingDailyLog) {
+            await supabase
+                .from('daily_logs')
+                .update({ feed_consumed_kg: (existingDailyLog.feed_consumed_kg || 0) + totalFeedKg })
+                .eq('id', existingDailyLog.id);
+        } else {
+            await supabase
+                .from('daily_logs')
+                .insert({
+                    crop_id: crop_id,
+                    log_date: today,
+                    feed_consumed_kg: totalFeedKg,
+                    mortality: 0
+                });
+        }
+        revalidatePath(`/crops/${crop_id}`);
     }
 
     revalidatePath('/feeds');
     revalidatePath('/dashboard');
-    if (crop_id) revalidatePath(`/crops/${crop_id}`);
 }
 
 export async function restockFeed(formData: FormData) {
@@ -50,7 +112,7 @@ export async function restockFeed(formData: FormData) {
 
     if (!user) throw new Error("Unauthorized");
 
-    const bagCounts = {
+    const bagCounts: Record<string, number> = {
         'C1': parseInt(formData.get("c1_bags") as string) || 0,
         'C2': parseInt(formData.get("c2_bags") as string) || 0,
         'C3': parseInt(formData.get("c3_bags") as string) || 0,
@@ -60,28 +122,50 @@ export async function restockFeed(formData: FormData) {
         throw new Error("Please specify at least one bag for restocking");
     }
 
-    try {
-        // Try to call the RPC function for atomic update
-        const { error } = await supabase.rpc('restock_feed_atomic', {
-            p_c1_bags: bagCounts['C1'],
-            p_c2_bags: bagCounts['C2'],
-            p_c3_bags: bagCounts['C3'],
-            p_action: 'Restock',
-            p_log_date: new Date().toISOString()
+    // 1. Create log entry
+    const { error: logError } = await supabase
+        .from('feed_logs')
+        .insert({
+            action: 'Restock',
+            c1_bags: bagCounts['C1'],
+            c2_bags: bagCounts['C2'],
+            c3_bags: bagCounts['C3'],
+            log_date: new Date().toISOString()
         });
 
-        if (error) {
-            console.error("RPC Error:", error);
-            // Fallback to manual transaction-like logic if RPC doesn't exist yet
-            // (Maintenance mode or migration pending)
-            throw new Error(error.message);
+    if (logError) throw new Error(logError.message);
+
+    // 2. Update individual feed_types stock
+    for (const [name, count] of Object.entries(bagCounts)) {
+        if (count > 0) {
+            const { data: feedType } = await supabase
+                .from('feed_types')
+                .select('id, current_stock_kg')
+                .eq('name', name)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (feedType) {
+                const newStock = (feedType.current_stock_kg || 0) + (count * 50);
+                const { error: updateError } = await supabase
+                    .from('feed_types')
+                    .update({ current_stock_kg: newStock })
+                    .eq('id', feedType.id);
+
+                if (updateError) throw new Error(updateError.message);
+            } else {
+                // If feed type doesn't exist, create it (handles initial setup)
+                const { error: insertError } = await supabase
+                    .from('feed_types')
+                    .insert({
+                        user_id: user.id,
+                        name: name,
+                        current_stock_kg: count * 50
+                    });
+
+                if (insertError) throw new Error(insertError.message);
+            }
         }
-    } catch (e: any) {
-        // Fallback logic could go here, or just let it fail to ensure data integrity
-        // For now, let's assume the user will run the migration.
-        // But to be safe and "fix" the original code as well (make it robust order):
-        // If RPC fails, we might want to throw.
-        throw new Error(`Restock failed: ${e.message}`);
     }
 
     revalidatePath('/feeds');

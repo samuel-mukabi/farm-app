@@ -13,8 +13,8 @@ begin
   v_user_id := auth.uid();
 
   -- 1. Insert into feed_logs
-  insert into feed_logs (action, c1_bags, c2_bags, c3_bags, log_date, user_id)
-  values (p_action, p_c1_bags, p_c2_bags, p_c3_bags, p_log_date, v_user_id);
+  insert into feed_logs (action, c1_bags, c2_bags, c3_bags, log_date)
+  values (p_action, p_c1_bags, p_c2_bags, p_c3_bags, p_log_date);
 
   -- 2. Update stock for C1
   if p_c1_bags > 0 then
@@ -88,8 +88,8 @@ begin
 
 
   -- 2. Insert into feed_logs
-  insert into feed_logs (crop_id, action, c1_bags, c2_bags, c3_bags, log_date, user_id)
-  values (p_crop_id, p_action, p_c1_bags, p_c2_bags, p_c3_bags, p_log_date, v_user_id);
+  insert into feed_logs (crop_id, action, c1_bags, c2_bags, c3_bags, log_date)
+  values (p_crop_id, p_action, p_c1_bags, p_c2_bags, p_c3_bags, p_log_date);
 
   -- 3. Deduct stock
   if p_c1_bags > 0 then
