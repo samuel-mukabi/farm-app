@@ -38,10 +38,12 @@ export type FeedAction = 'Restock' | 'Usage';
 
 export interface FeedLog {
     id: string;
-    feed_type_id: string;
+    feed_type_id?: string;
     crop_id?: string;
     action: FeedAction;
-    quantity_kg: number;
+    c1_bags?: number;
+    c2_bags?: number;
+    c3_bags?: number;
     log_date: string;
 }
 
@@ -76,4 +78,5 @@ export interface VaccinationSchedule {
     target_date: string;
     status: VaccinationStatus;
     administered_at?: string;
+    notes?: string;
 }

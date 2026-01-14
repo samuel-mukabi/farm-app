@@ -34,20 +34,27 @@ const FeedInventoryCard = ({ feedType }: { feedType: FeedType }) => {
 
 const FeedLogItem = ({ log, feedTypes }: { log: FeedLog, feedTypes: FeedType[] }) => {
     const feedType = feedTypes.find(ft => ft.id === log.feed_type_id);
-    const bags = (log.quantity_kg / 50).toFixed(1);
+    const totalBags = (log.c1_bags || 0) + (log.c2_bags || 0) + (log.c3_bags || 0);
+    const totalKg = totalBags * 50;
+
+    const bagDetails = [
+        log.c1_bags ? `${log.c1_bags} C1` : null,
+        log.c2_bags ? `${log.c2_bags} C2` : null,
+        log.c3_bags ? `${log.c3_bags} C3` : null,
+    ].filter(Boolean).join(', ');
 
     return (
         <tr className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
             <td className="py-4 px-4 text-sm font-medium text-neutral-900">{log.action}</td>
-            <td className="py-4 px-4 text-sm text-neutral-600 font-medium">{feedType?.name || 'Unknown'}</td>
+            <td className="py-4 px-4 text-sm text-neutral-600 font-medium">{feedType?.name || 'Multi-type Log'}</td>
             <td className={`py-4 px-4 text-sm font-bold ${log.action === 'Restock' ? 'text-emerald-600' : 'text-amber-600'}`}>
                 <div className="flex flex-col">
-                    <span>{log.action === 'Restock' ? '+' : '-'}{log.quantity_kg} kg</span>
-                    <span className="text-[10px] font-medium text-neutral-400 capitalize">({bags} bags)</span>
+                    <span>{log.action === 'Restock' ? '+' : '-'}{totalKg} kg</span>
+                    <span className="text-[10px] font-medium text-neutral-400 capitalize">({bagDetails || '0 bags'})</span>
                 </div>
             </td>
             <td className="py-4 px-4 text-sm text-neutral-500">
-                {new Date(log.log_date).toLocaleDateString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                {new Date(log.log_date).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
             </td>
         </tr>
     );
@@ -106,7 +113,7 @@ export default async function Page() {
                 </div>
                 <div className="card overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[600px]">
+                        <table className="w-full text-left border-collapse min-w-150">
                             <thead>
                                 <tr className="bg-neutral-50/50">
                                     <th className="py-4 px-4 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Action</th>

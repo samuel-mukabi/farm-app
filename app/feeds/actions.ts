@@ -9,86 +9,99 @@ export async function logFeedUsage(formData: FormData) {
 
     if (!user) throw new Error("Unauthorized");
 
-    const feed_type_id = formData.get("feed_type_id") as string;
-    const crop_id = formData.get("crop_id") as string;
-    const quantity_kg = parseFloat(formData.get("quantity_kg") as string);
+    const crop_id = formData.get("crop_id") as string || null;
 
-    if (isNaN(quantity_kg) || quantity_kg <= 0) throw new Error("Invalid quantity");
+    const bagCounts: Record<string, number> = {
+        'C1': parseInt(formData.get("c1_bags") as string) || 0,
+        'C2': parseInt(formData.get("c2_bags") as string) || 0,
+        'C3': parseInt(formData.get("c3_bags") as string) || 0,
+    };
+
+    if (Object.values(bagCounts).every(count => count === 0)) {
+        throw new Error("Please specify at least one bag");
+    }
+
+    // 0. Stock Validation
+    for (const [name, count] of Object.entries(bagCounts)) {
+        if (count > 0) {
+            const { data: feedType } = await supabase
+                .from('feed_types')
+                .select('name, current_stock_kg')
+                .eq('name', name)
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (!feedType || (feedType.current_stock_kg || 0) < (count * 50)) {
+                const availableBags = Math.floor((feedType?.current_stock_kg || 0) / 50);
+                throw new Error(`Insufficient stock for ${name}: Required ${count} bags, but only ${availableBags} bags remaining.`);
+            }
+        }
+    }
 
     // 1. Create log entry
     const { error: logError } = await supabase
         .from('feed_logs')
         .insert({
-            feed_type_id,
             crop_id,
             action: 'Usage',
-            quantity_kg
+            c1_bags: bagCounts['C1'],
+            c2_bags: bagCounts['C2'],
+            c3_bags: bagCounts['C3']
         });
 
     if (logError) throw new Error(logError.message);
 
-    // 2. Update feed_types stock
-    const { data: feedType } = await supabase
-        .from('feed_types')
-        .select('current_stock_kg')
-        .eq('id', feed_type_id)
-        .single();
+    // 2. Update individual feed_types stock
+    for (const [name, count] of Object.entries(bagCounts)) {
+        if (count > 0) {
+            const { data: feedType } = await supabase
+                .from('feed_types')
+                .select('id, current_stock_kg')
+                .eq('name', name)
+                .eq('user_id', user.id)
+                .maybeSingle();
 
-    if (feedType) {
-        const newStock = (feedType.current_stock_kg || 0) - quantity_kg;
-        await supabase
-            .from('feed_types')
-            .update({ current_stock_kg: newStock })
-            .eq('id', feed_type_id);
+            if (feedType) {
+                const newStock = (feedType.current_stock_kg || 0) - (count * 50);
+                await supabase
+                    .from('feed_types')
+                    .update({ current_stock_kg: newStock })
+                    .eq('id', feedType.id);
+            }
+        }
     }
 
     revalidatePath('/feeds');
     revalidatePath('/dashboard');
-    if (crop_id) revalidatePath(`/crops/${crop_id}`);
-}
 
-export async function restockFeed(formData: FormData) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // 3. Sync with daily_logs if crop_id exists
+    if (crop_id) {
+        const totalFeedKg = Object.values(bagCounts).reduce((sum, count) => sum + (count * 50), 0);
+        const today = new Date().toISOString().split('T')[0];
 
-    if (!user) throw new Error("Unauthorized");
+        const { data: existingDailyLog } = await supabase
+            .from('daily_logs')
+            .select('*')
+            .eq('crop_id', crop_id)
+            .eq('log_date', today)
+            .maybeSingle();
 
-    const feed_type_id = formData.get("feed_type_id") as string;
-    const quantity_bags = parseFloat(formData.get("quantity_bags") as string);
-
-    if (isNaN(quantity_bags) || quantity_bags <= 0) throw new Error("Invalid quantity");
-
-    const quantity_kg = quantity_bags * 50;
-
-    // 1. Create log entry
-    const { error: logError } = await supabase
-        .from('feed_logs')
-        .insert({
-            feed_type_id,
-            action: 'Restock',
-            quantity_kg
-        });
-
-    if (logError) throw new Error(logError.message);
-
-    // 2. Update feed_types stock
-    const { data: feedType } = await supabase
-        .from('feed_types')
-        .select('current_stock_kg')
-        .eq('id', feed_type_id)
-        .single();
-
-    if (feedType) {
-        const newStock = (feedType.current_stock_kg || 0) + quantity_kg;
-        await supabase
-            .from('feed_types')
-            .update({
-                current_stock_kg: newStock,
-                reorder_level_kg: quantity_bags // Storing the actual bag count from last restock
-            })
-            .eq('id', feed_type_id);
+        if (existingDailyLog) {
+            await supabase
+                .from('daily_logs')
+                .update({ feed_consumed_kg: (existingDailyLog.feed_consumed_kg || 0) + totalFeedKg })
+                .eq('id', existingDailyLog.id);
+        } else {
+            await supabase
+                .from('daily_logs')
+                .insert({
+                    crop_id: crop_id,
+                    log_date: today,
+                    feed_consumed_kg: totalFeedKg,
+                    mortality: 0
+                });
+        }
+        revalidatePath(`/crops/${crop_id}`);
     }
-
-    revalidatePath('/feeds');
-    revalidatePath('/dashboard');
 }
+

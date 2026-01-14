@@ -143,12 +143,17 @@ export default function NewCropPage() {
                 }
 
                 if (typeId) {
-                    await supabase.from('feed_logs').insert({
+                    const logData: any = {
                         crop_id: crop.id,
                         feed_type_id: typeId,
-                        action: 'Restock',
-                        quantity_kg: feed.count * 50
-                    });
+                        action: 'Restock'
+                    };
+                    if (feed.name === 'C1') logData.c1_bags = feed.count;
+                    else if (feed.name === 'C2') logData.c2_bags = feed.count;
+                    else if (feed.name === 'C3') logData.c3_bags = feed.count;
+                    else logData.c1_bags = feed.count;
+
+                    await supabase.from('feed_logs').insert(logData);
                 }
             }
         }

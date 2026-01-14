@@ -1,12 +1,12 @@
 "use client"
 
 import { useState } from "react";
-import { Plus, X, Loader2, Utensils, RefreshCcw } from "lucide-react";
-import { logFeedUsage, restockFeed } from "./actions";
+import { Plus, X, Loader2 } from "lucide-react";
+import { logFeedUsage } from "./actions";
 import { FeedType, Crop } from "@/types/farm";
 
-export function FeedManagementModals({ feedTypes, crops }: { feedTypes: FeedType[], crops: Crop[] }) {
-    const [activeModal, setActiveModal] = useState<'usage' | 'restock' | null>(null);
+export function FeedManagementModals({crops }: { feedTypes: FeedType[], crops: Crop[] }) {
+    const [activeModal, setActiveModal] = useState<'usage' | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const closeModal = () => setActiveModal(null);
@@ -19,20 +19,12 @@ export function FeedManagementModals({ feedTypes, crops }: { feedTypes: FeedType
             >
                 <Plus className="w-4 h-4" /> Log Usage
             </button>
-            <button
-                onClick={() => setActiveModal('restock')}
-                className="bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-200 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-sm uppercase tracking-widest"
-            >
-                <RefreshCcw className="w-4 h-4" /> Restock
-            </button>
 
             {activeModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-neutral-900">
-                                {activeModal === 'usage' ? 'Log Feed Usage' : 'Restock Feed'}
-                            </h2>
+                            <h2 className="text-xl font-bold text-neutral-900">Log Feed Usage</h2>
                             <button onClick={closeModal} className="text-neutral-400 hover:text-neutral-600">
                                 <X className="w-6 h-6" />
                             </button>
@@ -41,8 +33,7 @@ export function FeedManagementModals({ feedTypes, crops }: { feedTypes: FeedType
                         <form action={async (formData) => {
                             setIsLoading(true);
                             try {
-                                if (activeModal === 'usage') await logFeedUsage(formData);
-                                else await restockFeed(formData);
+                                await logFeedUsage(formData);
                                 closeModal();
                             } catch (e) {
                                 alert(e instanceof Error ? e.message : "An error occurred");
@@ -51,48 +42,49 @@ export function FeedManagementModals({ feedTypes, crops }: { feedTypes: FeedType
                             }
                         }} className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Feed Type</label>
+                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Assign to Crop (Optional)</label>
                                 <select
-                                    name="feed_type_id"
-                                    required
+                                    name="crop_id"
                                     className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
                                 >
-                                    {feedTypes.map(ft => (
-                                        <option key={ft.id} value={ft.id}>{ft.name}</option>
+                                    <option value="">N/A</option>
+                                    {crops.map(crop => (
+                                        <option key={crop.id} value={crop.id}>{crop.name}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            {activeModal === 'usage' && (
+                            <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Assign to Crop (Optional)</label>
-                                    <select
-                                        name="crop_id"
+                                    <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">C1 Bags</label>
+                                    <input
+                                        type="number"
+                                        name="c1_bags"
+                                        defaultValue="0"
+                                        min="0"
                                         className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
-                                    >
-                                        <option value="">N/A</option>
-                                        {crops.map(crop => (
-                                            <option key={crop.id} value={crop.id}>{crop.name}</option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
-                                    {activeModal === 'usage' ? 'Quantity (kg)' : 'Quantity (Bags)'}
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    name={activeModal === 'usage' ? 'quantity_kg' : 'quantity_bags'}
-                                    required
-                                    placeholder={activeModal === 'usage' ? 'e.g. 50' : 'e.g. 2'}
-                                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
-                                />
-                                <p className="text-[10px] text-neutral-400 italic">
-                                    {activeModal === 'usage' ? 'Tip: One bag is usually 50kg.' : 'Tip: Inventory is tracked in kg (1 bag = 50kg).'}
-                                </p>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">C2 Bags</label>
+                                    <input
+                                        type="number"
+                                        name="c2_bags"
+                                        defaultValue="0"
+                                        min="0"
+                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">C3 Bags</label>
+                                    <input
+                                        type="number"
+                                        name="c3_bags"
+                                        defaultValue="0"
+                                        min="0"
+                                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
+                                    />
+                                </div>
                             </div>
 
                             <button
@@ -100,7 +92,7 @@ export function FeedManagementModals({ feedTypes, crops }: { feedTypes: FeedType
                                 disabled={isLoading}
                                 className="w-full bg-neutral-900 hover:bg-black text-white py-4 rounded-xl text-sm font-bold transition-all shadow-lg uppercase tracking-widest flex items-center justify-center gap-2"
                             >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (activeModal === 'usage' ? "Log Usage" : "Record Restock")}
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log Usage"}
                             </button>
                         </form>
                     </div>

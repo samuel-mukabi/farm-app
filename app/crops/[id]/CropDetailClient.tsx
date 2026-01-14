@@ -34,7 +34,9 @@ export function DailyLogModal({ cropId }: { cropId: string }) {
                     try {
                         const data = {
                             mortality: parseInt(formData.get("mortality") as string) || 0,
-                            feed_consumed_kg: parseFloat(formData.get("feed_consumed_kg") as string) || 0,
+                            c1_bags: parseInt(formData.get("c1_bags") as string) || 0,
+                            c2_bags: parseInt(formData.get("c2_bags") as string) || 0,
+                            c3_bags: parseInt(formData.get("c3_bags") as string) || 0,
                             water_consumed_liters: parseFloat(formData.get("water_consumed_liters") as string) || 0,
                             avg_weight_g: parseFloat(formData.get("avg_weight_g") as string) || undefined,
                             notes: formData.get("notes") as string
@@ -53,13 +55,27 @@ export function DailyLogModal({ cropId }: { cropId: string }) {
                             <input type="number" name="mortality" className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" placeholder="0" />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Feed Consumed (kg)</label>
-                            <input type="number" step="0.1" name="feed_consumed_kg" className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" placeholder="0" />
-                        </div>
-                        <div className="space-y-2">
                             <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Water (Liters)</label>
                             <input type="number" step="0.1" name="water_consumed_liters" className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" placeholder="0" />
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">C1 Bags</label>
+                            <input type="number" name="c1_bags" className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">C2 Bags</label>
+                            <input type="number" name="c2_bags" className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">C3 Bags</label>
+                            <input type="number" name="c3_bags" className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" placeholder="0" />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg Weight (g)</label>
                             <input type="number" step="1" name="avg_weight_g" className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" placeholder="Optional" />

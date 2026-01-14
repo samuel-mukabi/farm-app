@@ -29,14 +29,15 @@ export async function scheduleVaccination(formData: FormData) {
     revalidatePath('/dashboard');
 }
 
-export async function administerVaccination(vaccinationId: string) {
+export async function administerVaccination(vaccinationId: string, notes?: string) {
     const supabase = await createClient();
 
     const { error } = await supabase
         .from('vaccinations')
         .update({
             status: 'Administered' as VaccinationStatus,
-            administered_at: new Date().toISOString()
+            administered_at: new Date().toISOString(),
+            notes: notes
         })
         .eq('id', vaccinationId);
 

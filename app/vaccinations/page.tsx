@@ -117,7 +117,7 @@ export default async function Page() {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[600px]">
+                        <table className="w-full text-left border-collapse min-w-150">
                             <thead>
                                 <tr className="bg-neutral-50">
                                     <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Crop Name</th>

@@ -248,43 +248,57 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
         }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
-    // 5. Daily Logs for Chart (Last 7/30 days of consumption)
+    // 5. Daily Logs for Charts
     const targetCropIds = activeCrops.length > 0
         ? activeCrops.map(c => c.id)
         : typedCrops && typedCrops.length > 0 ? [typedCrops[0].id] : [];
 
-    const limit = period === 'monthly' ? 90 : 21; // More logs for monthly view to ensure coverage
+    const limit = period === 'monthly' ? 90 : 21;
     const displayCount = period === 'monthly' ? 30 : 7;
 
     const { data: recentLogs } = await supabase
         .from("daily_logs")
-        .select("log_date, feed_consumed_kg")
+        .select("log_date, feed_consumed_kg, avg_weight_g")
         .in("crop_id", targetCropIds)
         .order("log_date", { ascending: false })
         .limit(limit);
 
-    // Group and sum by date
-    const dailyTotals: Record<string, number> = {};
+    // Group and sum/average by date
+    const dailyFeed: Record<string, number> = {};
+    const dailyGrowth: Record<string, { sum: number, count: number }> = {};
+
     recentLogs?.forEach(log => {
         const date = log.log_date;
-        dailyTotals[date] = (dailyTotals[date] || 0) + (log.feed_consumed_kg || 0);
+        dailyFeed[date] = (dailyFeed[date] || 0) + (log.feed_consumed_kg || 0);
+
+        if (log.avg_weight_g) {
+            if (!dailyGrowth[date]) dailyGrowth[date] = { sum: 0, count: 0 };
+            dailyGrowth[date].sum += log.avg_weight_g;
+            dailyGrowth[date].count += 1;
+        }
     });
 
-    const chartData = Object.entries(dailyTotals)
+    const feedChartData = Object.entries(dailyFeed)
         .map(([date, kg]) => ({
-            val: Number((kg / 50).toFixed(2)), // Convert to bags
+            val: Number((kg / 50).toFixed(2)),
             label: period === 'monthly'
                 ? new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
                 : new Date(date).toLocaleDateString(undefined, { weekday: 'short' }),
-            date // for sorting
+            date
         }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(-displayCount);
 
-    const growthComparisonData = typedCrops?.slice(0, 12).reverse().map(crop => ({
-        val: crop.peak_weight || 0,
-        label: crop.name
-    })) ?? [];
+    const growthChartData = Object.entries(dailyGrowth)
+        .map(([date, { sum, count }]) => ({
+            val: Math.round(sum / count),
+            label: period === 'monthly'
+                ? new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+                : new Date(date).toLocaleDateString(undefined, { weekday: 'short' }),
+            date
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(-displayCount);
 
     return (
         <div className="p-8 max-w-7xl mx-auto">
@@ -357,8 +371,8 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                         </div>
                     </div>
                     <div className={`card px-6 pt-10 ${period === 'monthly' ? 'h-80' : 'h-64'} flex items-end gap-3 justify-around overflow-hidden group`}>
-                        {chartData.length > 0 ? chartData.map((data, i) => {
-                            const maxVal = Math.max(...chartData.map(d => d.val as number), 0.1);
+                        {feedChartData.length > 0 ? feedChartData.map((data, i) => {
+                            const maxVal = Math.max(...feedChartData.map(d => d.val as number), 0.1);
                             const height = (Number(data.val) / maxVal) * 100;
                             return (
                                 <div key={i} className="flex flex-col items-center gap-2 flex-1 max-w-10 h-full">
@@ -383,21 +397,23 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                 </section>
             </div>
 
-            {/* Growth Performance Comparison */}
+            {/* Daily Growth Trend */}
             <section className="mb-12">
                 <div className="mb-6">
-                    <h2 className="text-xl font-bold text-neutral-800">Growth Performance (g)</h2>
-                    <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-1">Comparison of peak weight across recent batches</p>
+                    <h2 className="text-xl font-bold text-neutral-800">Daily Growth Trend (g)</h2>
+                    <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-1">
+                        Average bird weight over time for {activeCropName}
+                    </p>
                 </div>
-                <div className="card p-8 h-80 flex items-end gap-6 justify-around">
-                    {growthComparisonData.length > 0 ? growthComparisonData.map((data, i) => {
-                        const maxVal = Math.max(...growthComparisonData.map(d => d.val as number), 1);
+                <div className={`card p-8 ${period === 'monthly' ? 'h-80' : 'h-64'} flex items-end gap-6 justify-around`}>
+                    {growthChartData.length > 0 ? growthChartData.map((data, i) => {
+                        const maxVal = Math.max(...growthChartData.map(d => d.val as number), 1);
                         const height = (Number(data.val) / maxVal) * 100;
                         return (
-                            <div key={i} className="flex flex-col items-center gap-4 w-full group h-full">
+                            <div key={i} className="flex flex-col items-center gap-4 w-full flex-1 group h-full">
                                 <div className="relative w-full max-w-16 h-full flex items-end">
                                     <div
-                                        className="bg-neutral-900/5 rounded-t-lg group-hover:bg-neutral-900/10 transition-colors absolute bottom-0 h-full"
+                                        className="w-full bg-neutral-900/5 rounded-t-lg group-hover:bg-neutral-900/10 transition-colors absolute bottom-0 h-full"
                                         style={{ height: '100%' }}
                                     ></div>
                                     <div
@@ -409,14 +425,12 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest truncate w-full text-center px-1" title={data.label}>
-                                    {data.label}
-                                </span>
+                                <span className={`text-[8px] text-neutral-400 font-bold uppercase ${period === 'monthly' ? 'hidden sm:block rotate-45 my-2' : ''}`}>{data.label}</span>
                             </div>
                         );
                     }) : (
                         <div className="w-full flex items-center justify-center text-neutral-400 italic py-10">
-                            No historical growth data available for comparison.
+                            No recent growth data available.
                         </div>
                     )}
                 </div>

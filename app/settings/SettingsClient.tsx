@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react";
-import { Save, Loader2, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { updateProfile } from "./actions";
 
 export function ProfileForm({ initialData }: { initialData: { full_name?: string, farm_name?: string } }) {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -14,6 +16,7 @@ export function ProfileForm({ initialData }: { initialData: { full_name?: string
             setIsSuccess(false);
             try {
                 await updateProfile(formData);
+                router.refresh();
                 setIsSuccess(true);
                 setTimeout(() => setIsSuccess(false), 3000);
             } catch (e) {
@@ -24,23 +27,23 @@ export function ProfileForm({ initialData }: { initialData: { full_name?: string
         }} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest pl-1">Full Name</label>
+                    <label className="text-[10px] font-black text-neutral-900 uppercase tracking-widest pl-1">Full Name</label>
                     <input
                         type="text"
                         name="full_name"
                         defaultValue={initialData.full_name}
-                        placeholder="John Doe"
-                        className="px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all font-bold placeholder:text-neutral-300"
+                        placeholder=""
+                        className="px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-md text-neutral-900 focus:outline-none focus:ring-neutral-900/5 focus:bg-white transition-all font-bold placeholder:text-neutral-300"
                     />
                 </div>
                 <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest pl-1">Farm Name</label>
+                    <label className="text-[10px] font-black text-neutral-900 uppercase tracking-widest pl-1">Farm Name</label>
                     <input
                         type="text"
                         name="farm_name"
                         defaultValue={initialData.farm_name}
-                        placeholder="Premium Poultry"
-                        className="px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all font-bold placeholder:text-neutral-300"
+                        placeholder=""
+                        className="px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-md text-neutral-900 focus:outline-none focus:ring-neutral-900/5 focus:bg-white transition-all font-bold placeholder:text-neutral-300"
                     />
                 </div>
             </div>
@@ -56,10 +59,10 @@ export function ProfileForm({ initialData }: { initialData: { full_name?: string
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-10 py-4 bg-neutral-900 text-white rounded-2xl font-black hover:bg-black transition-all shadow-xl flex items-center gap-3 disabled:bg-neutral-400 uppercase tracking-widest text-[10px]"
+                    className="px-10 py-4 bg-neutral-900 text-white rounded-md font-black hover:bg-black transition-all shadow-xl flex items-center gap-3 disabled:bg-neutral-400 uppercase tracking-widest text-[10px] cursor-pointer"
                 >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Configuration
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : ""}
+                    Save
                 </button>
             </div>
         </form>

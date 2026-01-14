@@ -59,6 +59,7 @@ export function ScheduleVaccineModal({ crops }: { crops: Crop[] }) {
                         <input
                             type="text"
                             name="vaccine_name"
+                            value="Gumboro (IBD)"
                             required
                             placeholder="e.g. Gumboro (IBD)"
                             className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
@@ -89,20 +90,59 @@ export function ScheduleVaccineModal({ crops }: { crops: Crop[] }) {
     );
 }
 
+export function AdministerVaccineModal({ id, isOpen, onClose }: { id: string, isOpen: boolean, onClose: () => void }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [notes, setNotes] = useState("");
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-neutral-900">Administer Vaccine</h2>
+                    <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Notes / Observations</label>
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Add any details about the vaccination day..."
+                            className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all min-h-[120px]"
+                        />
+                    </div>
+
+                    <button
+                        onClick={async () => {
+                            setIsLoading(true);
+                            try {
+                                await administerVaccination(id, notes);
+                                onClose();
+                            } catch (e) {
+                                alert(e instanceof Error ? e.message : "An error occurred");
+                            } finally {
+                                setIsLoading(false);
+                            }
+                        }}
+                        disabled={isLoading}
+                        className="w-full bg-neutral-900 hover:bg-black text-white py-4 rounded-xl text-sm font-bold transition-all shadow-lg uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Administered"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function VaccinationActions({ id, status }: { id: string, status: string }) {
     const [isLoading, setIsLoading] = useState(false);
-
-    const handleAdminister = async () => {
-        if (!confirm("Confirm this vaccine has been administered?")) return;
-        setIsLoading(true);
-        try {
-            await administerVaccination(id);
-        } catch (e) {
-            alert(e instanceof Error ? e.message : "An error occurred");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [isAdministerModalOpen, setIsAdministerModalOpen] = useState(false);
 
     const handleDelete = async () => {
         if (!confirm("Are you sure you want to delete this schedule?")) return;
@@ -119,14 +159,21 @@ export function VaccinationActions({ id, status }: { id: string, status: string 
     return (
         <div className="flex items-center gap-2">
             {status === 'Pending' && (
-                <button
-                    onClick={handleAdminister}
-                    disabled={isLoading}
-                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                    title="Mark as Administered"
-                >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                </button>
+                <>
+                    <button
+                        onClick={() => setIsAdministerModalOpen(true)}
+                        disabled={isLoading}
+                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Mark as Administered"
+                    >
+                        <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <AdministerVaccineModal
+                        id={id}
+                        isOpen={isAdministerModalOpen}
+                        onClose={() => setIsAdministerModalOpen(false)}
+                    />
+                </>
             )}
             <button
                 onClick={handleDelete}
