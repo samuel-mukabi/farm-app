@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Info, CheckCircle2, AlertCircle, LucideIcon, TrendingUp, Droplets, Utensils, ClipboardList, Plus } from "lucide-react";
+import { ArrowLeft, Calendar, Info, CheckCircle2, AlertCircle, LucideIcon, TrendingUp, ClipboardList, Plus } from "lucide-react";
 import { createClient } from "@/supabase/server";
 import { Crop, ChickSource, DailyLog } from "@/types/farm";
 import { harvestCrop } from "./actions";
 import { DailyLogModal } from "./CropDetailClient";
+import { HarvestModal } from "./HarvestModal";
 
 const DetailCard = ({ label, value, icon: Icon, colorClass = "text-neutral-400" }: { label: string, value: string | number, icon: LucideIcon, colorClass?: string }) => (
     <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm flex items-start gap-4">
@@ -77,15 +78,7 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                     </div>
 
                     {!isCompleted && (
-                        <form action={handleHarvest}>
-                            <button
-                                type="submit"
-                                className="bg-neutral-900 hover:bg-black text-white px-8 py-4 rounded-xl text-xs font-bold transition-all shadow-lg hover:shadow-xl uppercase tracking-widest flex items-center gap-2 group"
-                            >
-                                <CheckCircle2 className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-                                Harvest Crop
-                            </button>
-                        </form>
+                        <HarvestModal cropId={id} />
                     )}
                 </div>
             </header>

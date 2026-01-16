@@ -57,13 +57,16 @@ const Page = async () => {
         .select(`
             name, 
             total_chicks,
+            avg_weight_heavy,
+            avg_weight_medium,
+            avg_weight_light,
             daily_logs(mortality, feed_consumed_kg, avg_weight_g),
             feed_logs(action, c1_bags, c2_bags, c3_bags)
         `)
         .order('arrival_date', { ascending: false })
         .limit(10);
 
-    const chartData = ((recentCropsRaw as unknown as CropData[]) || []).map(crop => {
+    const chartData = ((recentCropsRaw as unknown as (CropData & { avg_weight_heavy?: number, avg_weight_medium?: number, avg_weight_light?: number })[]) || []).map(crop => {
         const logs = crop.daily_logs || [];
         const totalMortality = logs.reduce((sum, log) => sum + (log.mortality || 0), 0) || 0;
         const totalFeedKg = logs.reduce((sum, log) => sum + (log.feed_consumed_kg || 0), 0) || 0;
@@ -88,7 +91,10 @@ const Page = async () => {
             c2_bags: c2,
             c3_bags: c3,
             has_detailed_data: hasDetailedData,
-            peak_weight: peakWeight
+            peak_weight: peakWeight,
+            avg_weight_heavy: crop.avg_weight_heavy || 0,
+            avg_weight_medium: crop.avg_weight_medium || 0,
+            avg_weight_light: crop.avg_weight_light || 0
         };
     }).reverse();
 
@@ -281,39 +287,87 @@ const Page = async () => {
                 <section className="p-8 border-t border-neutral-50 mt-10">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-xl font-bold text-neutral-900">Growth Performance Comparison (g)</h2>
-                            <p className="text-sm text-neutral-400 font-medium">Comparison of peak weight across last 10 batches</p>
+                            <h2 className="text-xl font-bold text-neutral-900">Harvest Group Performance (g)</h2>
+                            <p className="text-sm text-neutral-400 font-medium">Comparison of Heavy, Medium, and Light groups</p>
                         </div>
                         <TrendingUp className="w-6 h-6 text-neutral-700" />
                     </div>
-                    <div className="h-80 flex items-end justify-between px-2 gap-6">
-                        {chartData.length > 0 ? chartData.map((crop, i) => {
-                            const maxVal = Math.max(...chartData.map(c => c.peak_weight), 1);
-                            const height = (crop.peak_weight / maxVal) * 100;
-                            return (
-                                <div key={i} className="flex flex-col items-center gap-4 flex-1 group h-full">
-                                    <div className="relative w-full max-w-16 h-full flex items-end">
-                                        <div
-                                            className="w-full absolute bottom-0 h-full"
-                                            style={{ height: '100%' }}
-                                        ></div>
-                                        <div
-                                            className="w-full bg-neutral-900 rounded-t-lg transition-all duration-700 relative flex items-start justify-center cursor-crosshair pt-2"
-                                            style={{ height: `${height}%` }}
-                                        >
-                                            <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {crop.peak_weight}g
-                                            </span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Heavy Group */}
+                        <div className="bg-neutral-50 p-6 rounded-2xl">
+                            <h3 className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-widest text-center">Heavy Group</h3>
+                            <div className="h-64 flex items-end justify-between px-2 gap-2">
+                                {chartData.length > 0 ? chartData.map((crop, i) => {
+                                    const maxVal = Math.max(...chartData.map(c => c.avg_weight_heavy), 1);
+                                    const height = (crop.avg_weight_heavy / maxVal) * 100;
+                                    return (
+                                        <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
+                                            {crop.avg_weight_heavy > 0 ? (
+                                                <div className="w-full bg-emerald-500 rounded-t-md relative flex items-start justify-center cursor-crosshair group-hover:bg-emerald-600 transition-colors" style={{ height: `${height}%` }}>
+                                                    <div className="absolute -top-6 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                                                        {crop.avg_weight_heavy}g
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="w-full h-px bg-neutral-200"></div>
+                                            )}
+                                            <span className="text-[8px] text-neutral-400 font-bold uppercase truncate w-full text-center">{crop.name}</span>
                                         </div>
-                                    </div>
-                                    <span className="text-[8px] text-neutral-500 font-bold uppercase tracking-widest truncate w-full text-center" title={crop.name}>
-                                        {crop.name}
-                                    </span>
-                                </div>
-                            );
-                        }) : (
-                            <div className="w-full h-full flex items-center justify-center text-neutral-400 italic text-sm">Insufficient data for chart.</div>
-                        )}
+                                    )
+                                }) : <div className="text-xs text-neutral-400 text-center w-full">No Data</div>}
+                            </div>
+                        </div>
+
+                        {/* Medium Group */}
+                        <div className="bg-neutral-50 p-6 rounded-2xl">
+                            <h3 className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-widest text-center">Medium Group</h3>
+                            <div className="h-64 flex items-end justify-between px-2 gap-2">
+                                {chartData.length > 0 ? chartData.map((crop, i) => {
+                                    const maxVal = Math.max(...chartData.map(c => c.avg_weight_medium), 1);
+                                    const height = (crop.avg_weight_medium / maxVal) * 100;
+                                    return (
+                                        <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
+                                            {crop.avg_weight_medium > 0 ? (
+                                                <div className="w-full bg-blue-500 rounded-t-md relative flex items-start justify-center cursor-crosshair group-hover:bg-blue-600 transition-colors" style={{ height: `${height}%` }}>
+                                                    <div className="absolute -top-6 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                                                        {crop.avg_weight_medium}g
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="w-full h-px bg-neutral-200"></div>
+                                            )}
+                                            <span className="text-[8px] text-neutral-400 font-bold uppercase truncate w-full text-center">{crop.name}</span>
+                                        </div>
+                                    )
+                                }) : <div className="text-xs text-neutral-400 text-center w-full">No Data</div>}
+                            </div>
+                        </div>
+
+                        {/* Light Group */}
+                        <div className="bg-neutral-50 p-6 rounded-2xl">
+                            <h3 className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-widest text-center">Light Group</h3>
+                            <div className="h-64 flex items-end justify-between px-2 gap-2">
+                                {chartData.length > 0 ? chartData.map((crop, i) => {
+                                    const maxVal = Math.max(...chartData.map(c => c.avg_weight_light), 1);
+                                    const height = (crop.avg_weight_light / maxVal) * 100;
+                                    return (
+                                        <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
+                                            {crop.avg_weight_light > 0 ? (
+                                                <div className="w-full bg-orange-400 rounded-t-md relative flex items-start justify-center cursor-crosshair group-hover:bg-orange-500 transition-colors" style={{ height: `${height}%` }}>
+                                                    <div className="absolute -top-6 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                                                        {crop.avg_weight_light}g
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="w-full h-px bg-neutral-200"></div>
+                                            )}
+                                            <span className="text-[8px] text-neutral-400 font-bold uppercase truncate w-full text-center">{crop.name}</span>
+                                        </div>
+                                    )
+                                }) : <div className="text-xs text-neutral-400 text-center w-full">No Data</div>}
+                            </div>
+                        </div>
                     </div>
                 </section>
             </div>

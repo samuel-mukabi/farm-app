@@ -2,16 +2,29 @@
 
 import { createClient } from "@/supabase/server";
 import { revalidatePath } from "next/cache";
+import { Crop } from "@/types/farm";
 
-export async function harvestCrop(cropId: string) {
+export async function harvestCrop(cropId: string, weights?: {
+    avg_weight_heavy?: number;
+    avg_weight_medium?: number;
+    avg_weight_light?: number;
+}) {
     const supabase = await createClient();
+
+    const updateData: Partial<Crop> = {
+        status: 'Completed',
+        actual_harvest_date: new Date().toISOString()
+    };
+
+    if (weights) {
+        if (weights.avg_weight_heavy) updateData.avg_weight_heavy = weights.avg_weight_heavy;
+        if (weights.avg_weight_medium) updateData.avg_weight_medium = weights.avg_weight_medium;
+        if (weights.avg_weight_light) updateData.avg_weight_light = weights.avg_weight_light;
+    }
 
     const { error } = await supabase
         .from('crops')
-        .update({
-            status: 'Completed',
-            actual_harvest_date: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', cropId);
 
     if (error) {

@@ -10,6 +10,9 @@ export interface Crop {
     expected_harvest_date?: string;
     actual_harvest_date?: string;
     status: CropStatus;
+    avg_weight_heavy?: number;
+    avg_weight_medium?: number;
+    avg_weight_light?: number;
     notes?: string;
     created_at?: string;
 }
