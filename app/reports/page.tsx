@@ -293,81 +293,64 @@ const Page = async () => {
                         <TrendingUp className="w-6 h-6 text-neutral-700" />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Heavy Group */}
-                        <div className="bg-neutral-50 p-6 rounded-2xl">
-                            <h3 className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-widest text-center">Heavy Group</h3>
-                            <div className="h-64 flex items-end justify-between px-2 gap-2">
-                                {chartData.length > 0 ? chartData.map((crop, i) => {
-                                    const maxVal = Math.max(...chartData.map(c => c.avg_weight_heavy), 1);
-                                    const height = (crop.avg_weight_heavy / maxVal) * 100;
-                                    return (
-                                        <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
-                                            {crop.avg_weight_heavy > 0 ? (
-                                                <div className="w-full bg-emerald-500 rounded-t-md relative flex items-start justify-center cursor-crosshair group-hover:bg-emerald-600 transition-colors" style={{ height: `${height}%` }}>
-                                                    <div className="absolute -top-6 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
-                                                        {crop.avg_weight_heavy}g
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="w-full h-px bg-neutral-200"></div>
-                                            )}
-                                            <span className="text-[8px] text-neutral-400 font-bold uppercase truncate w-full text-center">{crop.name}</span>
-                                        </div>
-                                    )
-                                }) : <div className="text-xs text-neutral-400 text-center w-full">No Data</div>}
-                            </div>
+                    {/* Legend */}
+                    <div className="flex gap-4 mb-6">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-neutral-900 rounded-sm"></div>
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase">Heavy</span>
                         </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-neutral-500 rounded-sm"></div>
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase">Medium</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-neutral-300 rounded-sm"></div>
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase">Light</span>
+                        </div>
+                    </div>
 
-                        {/* Medium Group */}
-                        <div className="bg-neutral-50 p-6 rounded-2xl">
-                            <h3 className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-widest text-center">Medium Group</h3>
-                            <div className="h-64 flex items-end justify-between px-2 gap-2">
-                                {chartData.length > 0 ? chartData.map((crop, i) => {
-                                    const maxVal = Math.max(...chartData.map(c => c.avg_weight_medium), 1);
-                                    const height = (crop.avg_weight_medium / maxVal) * 100;
-                                    return (
-                                        <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
-                                            {crop.avg_weight_medium > 0 ? (
-                                                <div className="w-full bg-blue-500 rounded-t-md relative flex items-start justify-center cursor-crosshair group-hover:bg-blue-600 transition-colors" style={{ height: `${height}%` }}>
-                                                    <div className="absolute -top-6 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
-                                                        {crop.avg_weight_medium}g
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="w-full h-px bg-neutral-200"></div>
-                                            )}
-                                            <span className="text-[8px] text-neutral-400 font-bold uppercase truncate w-full text-center">{crop.name}</span>
-                                        </div>
-                                    )
-                                }) : <div className="text-xs text-neutral-400 text-center w-full">No Data</div>}
-                            </div>
-                        </div>
+                    <div className="h-80 flex items-end justify-between px-2 gap-4">
+                        {chartData.length > 0 ? chartData.map((crop, i) => {
+                            const maxVal = Math.max(...chartData.map(c => Math.max(c.avg_weight_heavy, c.avg_weight_medium, c.avg_weight_light)), 1);
 
-                        {/* Light Group */}
-                        <div className="bg-neutral-50 p-6 rounded-2xl">
-                            <h3 className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-widest text-center">Light Group</h3>
-                            <div className="h-64 flex items-end justify-between px-2 gap-2">
-                                {chartData.length > 0 ? chartData.map((crop, i) => {
-                                    const maxVal = Math.max(...chartData.map(c => c.avg_weight_light), 1);
-                                    const height = (crop.avg_weight_light / maxVal) * 100;
-                                    return (
-                                        <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
-                                            {crop.avg_weight_light > 0 ? (
-                                                <div className="w-full bg-orange-400 rounded-t-md relative flex items-start justify-center cursor-crosshair group-hover:bg-orange-500 transition-colors" style={{ height: `${height}%` }}>
-                                                    <div className="absolute -top-6 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
-                                                        {crop.avg_weight_light}g
-                                                    </div>
+                            const hHeavy = (crop.avg_weight_heavy / maxVal) * 100;
+                            const hMedium = (crop.avg_weight_medium / maxVal) * 100;
+                            const hLight = (crop.avg_weight_light / maxVal) * 100;
+
+                            return (
+                                <div key={i} className="flex-1 flex flex-col items-center h-full justify-end group">
+                                    <div className="flex items-end gap-px h-full w-full justify-center">
+                                        {/* Heavy Bar */}
+                                        {crop.avg_weight_heavy > 0 && (
+                                            <div className="w-full max-w-3 bg-neutral-900 rounded-t-sm relative group-bar" style={{ height: `${hHeavy}%` }}>
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                    Heavy: {crop.avg_weight_heavy}g
                                                 </div>
-                                            ) : (
-                                                <div className="w-full h-px bg-neutral-200"></div>
-                                            )}
-                                            <span className="text-[8px] text-neutral-400 font-bold uppercase truncate w-full text-center">{crop.name}</span>
-                                        </div>
-                                    )
-                                }) : <div className="text-xs text-neutral-400 text-center w-full">No Data</div>}
-                            </div>
-                        </div>
+                                            </div>
+                                        )}
+                                        {/* Medium Bar */}
+                                        {crop.avg_weight_medium > 0 && (
+                                            <div className="w-full max-w-3 bg-neutral-500 rounded-t-sm relative group-bar" style={{ height: `${hMedium}%` }}>
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                    Medium: {crop.avg_weight_medium}g
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* Light Bar */}
+                                        {crop.avg_weight_light > 0 && (
+                                            <div className="w-full max-w-3 bg-neutral-300 rounded-t-sm relative group-bar" style={{ height: `${hLight}%` }}>
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                    Light: {crop.avg_weight_light}g
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span className="mt-4 text-[8px] font-black text-neutral-400 uppercase truncate w-full text-center">{crop.name}</span>
+                                </div>
+                            );
+                        }) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-400 italic text-sm">Insufficient data for chart.</div>
+                        )}
                     </div>
                 </section>
             </div>
