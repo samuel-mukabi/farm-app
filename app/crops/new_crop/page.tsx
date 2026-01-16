@@ -125,9 +125,9 @@ export default function NewCropPage() {
             const lightKg = parseFloat(data.total_weight_light_kg as string) || 0;
             const totalKg = heavyKg + mediumKg + lightKg;
 
-            const avgHeavyG = (heavyKg * 1000) / birdsPerGroup;
-            const avgMediumG = (mediumKg * 1000) / birdsPerGroup;
-            const avgLightG = (lightKg * 1000) / birdsPerGroup;
+            const avgHeavyG = heavyKg * 1000;
+            const avgMediumG = mediumKg * 1000;
+            const avgLightG = lightKg * 1000;
             const overallAvgG = (totalKg * 1000) / liveBirds;
 
             // Update local cropData object to include weights before any other ops if needed, 
@@ -329,12 +329,12 @@ export default function NewCropPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
                                         <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider block mb-2">
-                                            Total Harvest Weight (kg) - Split into 3 Groups
+                                            Average Weight per Bird (kg) - Split into 3 Groups
                                         </label>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <InputField label="Heavy Group (kg)" name="total_weight_heavy_kg" type="number" placeholder="0" required={isHistorical} />
-                                            <InputField label="Medium Group (kg)" name="total_weight_medium_kg" type="number" placeholder="0" required={isHistorical} />
-                                            <InputField label="Light Group (kg)" name="total_weight_light_kg" type="number" placeholder="0" required={isHistorical} />
+                                            <InputField label="Heavy Group Avg (kg)" name="total_weight_heavy_kg" type="number" placeholder="0" required={isHistorical} />
+                                            <InputField label="Medium Group Avg (kg)" name="total_weight_medium_kg" type="number" placeholder="0" required={isHistorical} />
+                                            <InputField label="Light Group Avg (kg)" name="total_weight_light_kg" type="number" placeholder="0" required={isHistorical} />
                                         </div>
                                     </div>
                                     <InputField label="Total Mortality" name="total_mortality" type="number" placeholder="0" required={isHistorical} />
