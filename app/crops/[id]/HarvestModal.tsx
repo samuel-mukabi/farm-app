@@ -29,10 +29,9 @@ export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
             // Input is in kg, stored average is in grams
             const birdsPerGroup = Math.max(1, liveBirds / 3);
 
-            const calculateAverage = (avgKg: string) => {
-                if (!avgKg) return undefined;
-                const avgGrams = parseFloat(avgKg) * 1000;
-                return avgGrams;
+            const calculateAverage = (avgG: string) => {
+                if (!avgG) return undefined;
+                return parseFloat(avgG);
             };
 
             await harvestCrop(cropId, {
@@ -69,7 +68,7 @@ export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
                             <Scale className="w-6 h-6 text-emerald-500" />
                             Final Weighing
                         </h3>
-                        <p className="text-neutral-500 mt-2 text-sm">Enter the <strong>AVERAGE</strong> weight (in kg) per bird for each group.</p>
+                        <p className="text-neutral-500 mt-2 text-sm">Enter the <strong>AVERAGE</strong> weight (in grams) per bird for each group.</p>
                     </div>
                     <button
                         onClick={() => setIsOpen(false)}
@@ -90,12 +89,12 @@ export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
                     <div className="space-y-4">
                         <div className="group">
                             <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 group-focus-within:text-emerald-600 transition-colors">
-                                Heavy Group Avg (kg)
+                                Heavy Group Avg (g)
                             </label>
                             <input
                                 type="number"
-                                step="0.1"
-                                placeholder="e.g. 2.5"
+                                step="1"
+                                placeholder="e.g. 2500"
                                 value={weights.heavy}
                                 onChange={e => setWeights({ ...weights, heavy: e.target.value })}
                                 className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 font-bold text-neutral-900 placeholder:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
@@ -104,12 +103,12 @@ export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
 
                         <div className="group">
                             <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 group-focus-within:text-emerald-600 transition-colors">
-                                Medium Group Avg (kg)
+                                Medium Group Avg (g)
                             </label>
                             <input
                                 type="number"
-                                step="0.1"
-                                placeholder="e.g. 2.1"
+                                step="1"
+                                placeholder="e.g. 2100"
                                 value={weights.medium}
                                 onChange={e => setWeights({ ...weights, medium: e.target.value })}
                                 className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 font-bold text-neutral-900 placeholder:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
@@ -118,12 +117,12 @@ export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
 
                         <div className="group">
                             <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 group-focus-within:text-emerald-600 transition-colors">
-                                Light Group Avg (kg)
+                                Light Group Avg (g)
                             </label>
                             <input
                                 type="number"
-                                step="0.1"
-                                placeholder="e.g. 1.8"
+                                step="1"
+                                placeholder="e.g. 1800"
                                 value={weights.light}
                                 onChange={e => setWeights({ ...weights, light: e.target.value })}
                                 className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 font-bold text-neutral-900 placeholder:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"

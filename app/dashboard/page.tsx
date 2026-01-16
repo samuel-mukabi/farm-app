@@ -390,7 +390,7 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                                             className="w-full bg-neutral-400 rounded-t-sm group-hover:bg-neutral-900 transition-colors"
                                             style={{ height: `${height}%` }}
                                         ></div>
-                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity font-bold whitespace-nowrap z-10">
+                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-100 lg:opacity-0 lg:group-hover/bar:opacity-100 transition-opacity font-bold whitespace-nowrap z-10">
                                             {data.val} Bags
                                         </div>
                                     </div>
@@ -429,7 +429,7 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                                         className="w-full bg-neutral-900 rounded-t-lg transition-all duration-700 relative flex items-start justify-center pt-2"
                                         style={{ height: `${height}%` }}
                                     >
-                                        <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-[10px] font-bold text-white opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                             {data.val}g
                                         </span>
                                     </div>

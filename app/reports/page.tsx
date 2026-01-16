@@ -43,13 +43,25 @@ const Page = async () => {
     const { data: logs } = await supabase.from('daily_logs').select('mortality, feed_consumed_kg, avg_weight_g');
     const { data: vaccines } = await supabase.from('vaccinations').select('id, status');
 
+    // Fetch feed logs for accurate bag usage breakdown
+    const { data: usageLogs } = await supabase.from('feed_logs').select('c1_bags, c2_bags, c3_bags').eq('action', 'Usage');
+
     const totalInitialChicks = crops?.reduce((sum, c) => sum + (c.total_chicks || 0), 0) || 0;
     const totalMortality = logs?.reduce((sum, l) => sum + (l.mortality || 0), 0) || 0;
-    const totalFeed = logs?.reduce((sum, l) => sum + (l.feed_consumed_kg || 0), 0) || 0;
     const administeredVaccines = vaccines?.filter(v => v.status === 'Administered').length || 0;
 
     const mortalityRate = totalInitialChicks > 0 ? (totalMortality / totalInitialChicks) * 100 : 0;
-    const avgFeedBagsPerCycle = crops && crops.length > 0 ? (totalFeed / 50) / crops.length : 0;
+
+    // Calculate Feed Averages
+    const cropCount = crops?.length || 1; // Avoid division by zero
+    const totalC1 = usageLogs?.reduce((sum, l) => sum + (l.c1_bags || 0), 0) || 0;
+    const totalC2 = usageLogs?.reduce((sum, l) => sum + (l.c2_bags || 0), 0) || 0;
+    const totalC3 = usageLogs?.reduce((sum, l) => sum + (l.c3_bags || 0), 0) || 0;
+
+    const avgC1 = totalC1 / cropCount;
+    const avgC2 = totalC2 / cropCount;
+    const avgC3 = totalC3 / cropCount;
+    const avgTotalBags = avgC1 + avgC2 + avgC3;
 
     // Growth Trend: Final chick count for last 10 crops
     const { data: recentCropsRaw } = await supabase
@@ -117,7 +129,38 @@ const Page = async () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 <ReportCard title="Total Capacity" value={totalInitialChicks.toLocaleString()} icon={Bird} />
-                <ReportCard title="Avg. Feed Used" value={`${avgFeedBagsPerCycle.toFixed(1)} Bags`} change="Bags/Cycle" trend="down" icon={Utensils} />
+
+                {/* Custom Feed Report Card with Breakdown */}
+                <div className="p-6 relative overflow-hidden group">
+                    <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none">Avg. Feed / Cycle</h3>
+                        <Utensils className="w-4 h-4 text-neutral-300 group-hover:text-neutral-900 transition-colors" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="flex flex-col">
+                            <span className="text-2xl font-black text-neutral-900 tracking-tight">{avgC1.toFixed(1)}</span>
+                            <div className="flex items-center gap-1 mt-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-neutral-300"></div>
+                                <span className="text-[9px] font-bold text-neutral-400 uppercase">C1</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-2xl font-black text-neutral-900 tracking-tight">{avgC2.toFixed(1)}</span>
+                            <div className="flex items-center gap-1 mt-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-neutral-500"></div>
+                                <span className="text-[9px] font-bold text-neutral-400 uppercase">C2</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-2xl font-black text-neutral-900 tracking-tight">{avgC3.toFixed(1)}</span>
+                            <div className="flex items-center gap-1 mt-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-neutral-900"></div>
+                                <span className="text-[9px] font-bold text-neutral-400 uppercase">C3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <ReportCard title="Mortality Rate" value={`${mortalityRate.toFixed(1)}%`} change="Overall" trend="down" icon={TrendingDown} />
                 <ReportCard title="Vaccination Coverage" value={`${administeredVaccines}/${vaccines?.length || 0}`} icon={Syringe} />
             </div>
@@ -131,13 +174,14 @@ const Page = async () => {
                         </div>
                         <BarChart className="w-6 h-6 text-neutral-700" />
                     </div>
-                    <div className="h-64 flex items-end justify-between px-2 gap-4">
+                    <div className="h-64 overflow-x-auto">
+                        <div className="flex items-end gap-4 px-2 min-w-[800px] h-full">
                         {chartData.length > 0 ? chartData.map((crop, i) => {
                             const maxVal = Math.max(...chartData.map(c => c.final_count), 1);
                             const height = (crop.final_count / maxVal) * 100;
                             return (
-                                <div key={i} className="group relative flex-1 flex flex-col items-center h-full justify-end">
-                                    <div className="absolute -top-8 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                                <div key={i} className="group relative flex flex-col items-center h-full justify-end w-16 shrink-0">
+                                    <div className="absolute -top-8 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold">
                                         {crop.final_count.toLocaleString()}
                                     </div>
                                     <div className="w-full bg-neutral-400 rounded-t-sm group-hover:bg-neutral-900 transition-all cursor-crosshair" style={{ height: `${height}%` }}></div>
@@ -147,6 +191,7 @@ const Page = async () => {
                         }) : (
                             <div className="w-full h-full flex items-center justify-center text-neutral-400 italic text-sm">Insufficient data for chart.</div>
                         )}
+                        </div>
                     </div>
                 </section>
 
@@ -223,7 +268,8 @@ const Page = async () => {
                         </div>
                     </div>
 
-                    <div className="h-80 flex items-end justify-between px-2 gap-4">
+                    <div className="h-80 overflow-x-auto">
+                        <div className="flex items-end justify-between gap-6 min-w-225 h-full">
                         {chartData.length > 0 ? chartData.map((crop, i) => {
                             // Determine max for scaling (either max total feed or current sum)
                             const maxVal = Math.max(...chartData.map(c => Math.max(c.total_feed_bags, c.c1_bags + c.c2_bags + c.c3_bags)), 1);
@@ -240,7 +286,7 @@ const Page = async () => {
                                             {/* C1 Bar */}
                                             {crop.c1_bags > 0 && (
                                                 <div className="w-full max-w-3 bg-neutral-300 rounded-t-sm relative group-bar" style={{ height: `${h1}%` }}>
-                                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
                                                         C1: {crop.c1_bags}
                                                     </div>
                                                 </div>
@@ -248,7 +294,7 @@ const Page = async () => {
                                             {/* C2 Bar */}
                                             {crop.c2_bags > 0 && (
                                                 <div className="w-full max-w-3 bg-neutral-500 rounded-t-sm relative group-bar" style={{ height: `${h2}%` }}>
-                                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
                                                         C2: {crop.c2_bags}
                                                     </div>
                                                 </div>
@@ -256,7 +302,7 @@ const Page = async () => {
                                             {/* C3 Bar */}
                                             {crop.c3_bags > 0 && (
                                                 <div className="w-full max-w-3 bg-neutral-900 rounded-t-sm relative group-bar" style={{ height: `${h3}%` }}>
-                                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
                                                         C3: {crop.c3_bags}
                                                     </div>
                                                 </div>
@@ -270,7 +316,7 @@ const Page = async () => {
                                 const height = (crop.total_feed_bags / maxVal) * 100;
                                 return (
                                     <div key={i} className="group relative flex-1 flex flex-col items-center h-full justify-end">
-                                        <div className="absolute -top-10 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10">
+                                        <div className="absolute -top-10 bg-neutral-900 text-white text-[10px] px-2 py-1 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10">
                                             Total: {crop.total_feed_bags} Bags
                                         </div>
                                         <div className="w-full max-w-9 bg-neutral-200 rounded-t-sm group-hover:bg-neutral-300 transition-all cursor-crosshair relative" style={{ height: `${height}%` }}></div>
@@ -281,6 +327,7 @@ const Page = async () => {
                         }) : (
                             <div className="w-full h-full flex items-center justify-center text-neutral-400 italic text-sm">Insufficient data for chart.</div>
                         )}
+                        </div>
                     </div>
                 </section>
 
@@ -309,13 +356,14 @@ const Page = async () => {
                         </div>
                     </div>
 
-                    <div className="h-80 flex items-end justify-between px-2 gap-4">
+                    <div className="h-80 overflow-x-auto">
+                        <div className="flex items-end justify-between gap-12 min-w-225 h-full">
                         {chartData.length > 0 ? chartData.map((crop, i) => {
                             const maxVal = Math.max(...chartData.map(c => Math.max(c.avg_weight_heavy, c.avg_weight_medium, c.avg_weight_light)), 1);
 
-                            const hHeavy = (crop.avg_weight_heavy / maxVal) * 100;
-                            const hMedium = (crop.avg_weight_medium / maxVal) * 100;
-                            const hLight = (crop.avg_weight_light / maxVal) * 100;
+                            const hHeavy = (crop.avg_weight_heavy / 3000) * 100;
+                            const hMedium = (crop.avg_weight_medium / 4000) * 100;
+                            const hLight = (crop.avg_weight_light / 5000) * 100;
 
                             return (
                                 <div key={i} className="flex-1 flex flex-col items-center h-full justify-end group">
@@ -323,7 +371,7 @@ const Page = async () => {
                                         {/* Heavy Bar */}
                                         {crop.avg_weight_heavy > 0 && (
                                             <div className="w-full max-w-3 bg-neutral-900 rounded-t-sm relative group-bar" style={{ height: `${hHeavy}%` }}>
-                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
                                                     Heavy: {crop.avg_weight_heavy}g
                                                 </div>
                                             </div>
@@ -331,7 +379,7 @@ const Page = async () => {
                                         {/* Medium Bar */}
                                         {crop.avg_weight_medium > 0 && (
                                             <div className="w-full max-w-3 bg-neutral-500 rounded-t-sm relative group-bar" style={{ height: `${hMedium}%` }}>
-                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
                                                     Medium: {crop.avg_weight_medium}g
                                                 </div>
                                             </div>
@@ -339,7 +387,7 @@ const Page = async () => {
                                         {/* Light Bar */}
                                         {crop.avg_weight_light > 0 && (
                                             <div className="w-full max-w-3 bg-neutral-300 rounded-t-sm relative group-bar" style={{ height: `${hLight}%` }}>
-                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap z-10 pointer-events-none">
                                                     Light: {crop.avg_weight_light}g
                                                 </div>
                                             </div>
@@ -351,6 +399,7 @@ const Page = async () => {
                         }) : (
                             <div className="w-full h-full flex items-center justify-center text-neutral-400 italic text-sm">Insufficient data for chart.</div>
                         )}
+                        </div>
                     </div>
                 </section>
             </div>

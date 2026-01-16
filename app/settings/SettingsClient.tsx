@@ -68,3 +68,4 @@ export function ProfileForm({ initialData }: { initialData: { full_name?: string
         </form>
     );
 }
+

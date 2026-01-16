@@ -26,3 +26,5 @@ export async function updateProfile(formData: FormData) {
     revalidatePath('/settings');
     revalidatePath('/dashboard');
 }
+
+

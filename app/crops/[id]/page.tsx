@@ -106,7 +106,7 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                                         <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Date</th>
                                         <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Mortality</th>
                                         <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Feed (kg)</th>
-                                        <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Weight (g)</th>
+                                        <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Avg Weight (g)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -115,7 +115,9 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                                             <td className="py-4 text-xs font-bold text-neutral-900">{new Date(log.log_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</td>
                                             <td className="py-4 text-xs font-semibold text-red-500 text-center">{log.mortality || 0}</td>
                                             <td className="py-4 text-xs font-semibold text-neutral-700 text-center">{log.feed_consumed_kg || 0}</td>
-                                            <td className="py-4 text-xs font-semibold text-emerald-600 text-center">{log.avg_weight_g || '--'}</td>
+                                            <td className="py-4 text-xs font-semibold text-emerald-600 text-center">
+                                                {log.avg_weight_g ? (log.avg_weight_g > 10000 ? Math.round(log.avg_weight_g / 1000) : log.avg_weight_g) : '--'}
+                                            </td>
                                         </tr>
                                     )) : (
                                         <tr>
