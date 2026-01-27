@@ -8,6 +8,7 @@ import { Crop } from "@/types/farm";
 export function ScheduleVaccineModal({ crops }: { crops: Crop[] }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [vaccineName, setVaccineName] = useState("")
 
     if (!isOpen) {
         return (
@@ -59,7 +60,8 @@ export function ScheduleVaccineModal({ crops }: { crops: Crop[] }) {
                         <input
                             type="text"
                             name="vaccine_name"
-                            value="Gumboro (IBD)"
+                            value={vaccineName}
+                            onChange={(e) => setVaccineName(e.target.value)}
                             required
                             placeholder="e.g. Gumboro (IBD)"
                             className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all"
