@@ -72,6 +72,7 @@ export interface DailyLog {
     water_consumed_liters?: number;
     avg_weight_g?: number;
     notes?: string;
+    bags_used?: number;
 }
 
 export interface VaccinationSchedule {

@@ -14,7 +14,7 @@ export function ScheduleVaccineModal({ crops }: { crops: Crop[] }) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-neutral-900 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-sm uppercase tracking-widest"
+                className="bg-neutral-900 hover:bg-black text-white px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm uppercase tracking-widest active:scale-[0.98]"
             >
                 <Plus className="w-4 h-4" /> Schedule Vaccine
             </button>
@@ -115,7 +115,7 @@ export function AdministerVaccineModal({ id, isOpen, onClose }: { id: string, is
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Add any details about the vaccination day..."
-                            className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all min-h-[120px]"
+                            className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:bg-white transition-all min-h-30"
                         />
                     </div>
 

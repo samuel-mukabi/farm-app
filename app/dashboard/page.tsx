@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/supabase/server";
 import { Crop, FeedLog, FeedType, Vaccination, VaccinationStatus, CropStatus } from "@/types/farm";
-import { Plus } from "lucide-react";
+import {ChartNoAxesGantt} from "lucide-react";
 
 interface DashboardFeedLog extends FeedLog {
     feed_types: { name: string } | null;
@@ -318,8 +318,8 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                     </h1>
                     <p className="text-neutral-500 mt-2 text-base sm:text-lg">Real-time performance and critical alerts for your poultry farm.</p>
                 </div>
-                <Link href="/crops/new_crop" className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center">
-                    <Plus className="w-5 h-5" /> New Crop
+                <Link href={`/crops/${activeCrops[0].id}`} className="flex items-center gap-2 w-full sm:w-auto justify-center py-2 px-5 bg-black text-white md:text-black md:bg-transparent md:hover:bg-black md:hover:text-white transition-all rounded-md active:scale-[0.98]">
+                    <ChartNoAxesGantt className="w-5 h-5" /> Manage {activeCropName}
                 </Link>
             </header>
 
@@ -332,7 +332,14 @@ const Page = async (props: { searchParams: Promise<{ period?: string }> }) => {
                     <SummaryCard title="Current Bird Count" value={totalPresentChicks.toLocaleString()} />
                     <SummaryCard title="Active Crop" value={activeCropsDisplay} />
                     <SummaryCard title="Feed Balance (bags)" value={`${(totalFeedStock / 50).toFixed(1)}`} />
-                    <SummaryCard title="Next Vaccination" value={nextVaccination ? new Date(nextVaccination.target_date).toLocaleDateString() : 'None Scheduled'} />
+                    <SummaryCard title="Next Vaccination" value={nextVaccination ?
+                        (
+                            <div className="flex flex-col gap-2 md:flex-row md:text-xl md:items-center md:gap-5">
+                                <div className="font-thin  text-neutral-800">{nextVaccination.vaccine_name}</div>
+                                <div className="font-bold">{new Date(nextVaccination.target_date).toLocaleDateString()}</div>
+                            </div>
+                        )
+                        : 'None Scheduled'} />
                 </div>
             </section>
 

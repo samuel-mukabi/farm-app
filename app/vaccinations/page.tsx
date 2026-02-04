@@ -8,7 +8,7 @@ interface VaccinationWithCrop extends Vaccination {
 }
 
 const VaccinationRow = ({ vaccination }: { vaccination: VaccinationWithCrop }) => (
-    <tr className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
+    <tr className="border-b border-neutral-50 last:border-0 hover:bg-white transition-colors">
         <td className="py-4 px-6 text-sm font-bold text-neutral-900">{vaccination.crops?.name || 'Unknown Crop'}</td>
         <td className="py-4 px-6 text-sm text-neutral-600 font-medium">{vaccination.vaccine_name}</td>
         <td className="py-4 px-6 text-sm text-neutral-500">{new Date(vaccination.target_date).toLocaleDateString(undefined, { dateStyle: 'medium' })}</td>
@@ -64,8 +64,8 @@ export default async function Page() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
-                <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div className="p-6 ">
                     <div className="flex items-center gap-3 mb-4">
                         <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                         <h3 className="font-bold text-neutral-900">Administered</h3>
@@ -75,7 +75,7 @@ export default async function Page() {
                     </p>
                     <p className="text-xs text-neutral-400 mt-1 font-bold uppercase tracking-widest">Total</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm">
+                <div className="p-6 ">
                     <div className="flex items-center gap-3 mb-4">
                         <Clock className="w-5 h-5 text-blue-500" />
                         <h3 className="font-bold text-neutral-900">Pending</h3>
@@ -85,7 +85,7 @@ export default async function Page() {
                     </p>
                     <p className="text-xs text-neutral-400 mt-1 font-bold uppercase tracking-widest">Remaining</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm border-l-4 border-l-red-500">
+                <div className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <Info className="w-5 h-5 text-red-500" />
                         <h3 className="font-bold text-neutral-900">Missed</h3>
@@ -95,7 +95,7 @@ export default async function Page() {
                     </p>
                     <p className="text-xs text-neutral-400 mt-1 font-bold uppercase tracking-widest">Requires Attention</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-neutral-100 shadow-sm">
+                <div className="p-6 ">
                     <div className="flex items-center gap-3 mb-4">
                         <Syringe className="w-5 h-5 text-purple-500" />
                         <h3 className="font-bold text-neutral-900">Types</h3>
@@ -107,15 +107,15 @@ export default async function Page() {
                 </div>
             </div>
 
-            <section className="bg-white rounded-xl border border-neutral-100 overflow-hidden shadow-sm">
-                <div className="p-6 border-b border-neutral-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <section className="overflow-hidden">
+                <div className="p-6 border-b border-neutral-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 h-20">
                     <h2 className="text-xl font-bold text-neutral-800">Vaccination Schedule</h2>
                     <div className="relative w-full sm:w-48">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                         <input
                             type="text"
                             placeholder="Filter by batch..."
-                            className="w-full pl-10 pr-4 py-1.5 bg-neutral-50 border border-neutral-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10"
+                            className="w-full pl-10 pr-4 py-1.5 bg-neutral-50 border border-neutral-300 rounded-lg text-sm  focus:outline-none focus:border-black focus:border-2"
                         />
                     </div>
                 </div>
@@ -125,9 +125,9 @@ export default async function Page() {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-150">
+                        <table className="w-full text-left border-collapse min-w-150 sm:min-w-150">
                             <thead>
-                                <tr className="bg-neutral-50">
+                                <tr className="bg-neutral-50 border-b border-t border-neutral-300">
                                     <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Crop Name</th>
                                     <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Vaccine Type</th>
                                     <th className="py-4 px-6 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Target Date</th>

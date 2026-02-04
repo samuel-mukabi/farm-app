@@ -84,7 +84,7 @@ const SideBar = ({ isOpen, onClose }: SideBarProps) => {
                             <Link
                                 key={item.href}
                                 onClick={onClose}
-                                className="flex items-center gap-3 py-3 px-4 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl text-xs font-bold uppercase tracking-widest transition-all group"
+                                className="flex items-center gap-3 py-3 px-4 text-neutral-900 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl text-xs font-bold uppercase tracking-widest transition-all group"
                                 href={item.href}>
                                 <item.icon className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" />
                                 <li>{item.label}</li>
@@ -103,7 +103,7 @@ const SideBar = ({ isOpen, onClose }: SideBarProps) => {
                                     <p className="text-neutral-900 font-bold text-sm truncate">
                                         {user?.full_name ?? "—"}
                                     </p>
-                                    <p className="text-neutral-400 text-xs truncate">
+                                    <p className="text-neutral-900 text-xs truncate">
                                         {user?.email ?? ""}
                                     </p>
                                 </div>

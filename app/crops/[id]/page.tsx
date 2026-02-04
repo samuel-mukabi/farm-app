@@ -8,12 +8,12 @@ import { DailyLogModal } from "./CropDetailClient";
 import { HarvestModal } from "./HarvestModal";
 
 const DetailCard = ({ label, value, icon: Icon, colorClass = "text-neutral-400" }: { label: string, value: string | number, icon: LucideIcon, colorClass?: string }) => (
-    <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm flex items-start gap-4">
+    <div className="flex items-start gap-4 p-10">
         <div className="w-10 h-10 rounded-xl bg-neutral-50 flex items-center justify-center shrink-0">
             <Icon className={`w-5 h-5 ${colorClass}`} />
         </div>
         <div>
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{label}</p>
+            <p className="text-[10px] font-bold text-neutral-900 uppercase tracking-widest mb-1">{label}</p>
             <p className="text-lg font-bold text-neutral-900">{value}</p>
         </div>
     </div>
@@ -60,7 +60,7 @@ export default async function CropDetailsPage({ params }: { params: { id: string
     return (
         <div className="p-4 md:p-8 max-w-6xl mx-auto">
             <header className="mb-10">
-                <Link href="/crops" className="inline-flex items-center gap-2 text-sm font-bold text-neutral-400 hover:text-neutral-600 transition-colors uppercase tracking-widest mb-6 group text-[10px]">
+                <Link href="/crops" className="inline-flex items-center gap-2 text-sm font-bold text-neutral-900 hover:text-neutral-600 transition-colors uppercase tracking-widest mb-6 group text-[10px]">
                     <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> Back to Crops
                 </Link>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -92,7 +92,7 @@ export default async function CropDetailsPage({ params }: { params: { id: string
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div className="lg:col-span-2 space-y-10">
-                    <section className="bg-white rounded-3xl border border-neutral-100 p-8 shadow-sm">
+                    <section className="p-8">
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
                                 <ClipboardList className="w-5 h-5 text-neutral-400" />
@@ -100,13 +100,13 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                             </h2>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse min-w-[500px]">
+                            <table className="w-full text-left border-collapse min-w-125">
                                 <thead>
                                     <tr className="border-b border-neutral-50">
-                                        <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Date</th>
-                                        <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Mortality</th>
-                                        <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Feed (kg)</th>
-                                        <th className="pb-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Avg Weight (g)</th>
+                                        <th className="pb-4 text-[10px] font-bold text-neutral-900 uppercase tracking-widest">Date</th>
+                                        <th className="pb-4 text-[10px] font-bold text-neutral-900 uppercase tracking-widest text-center">Mortality</th>
+                                        <th className="pb-4 text-[10px] font-bold text-neutral-900 uppercase tracking-widest text-center">Feed (bags)</th>
+                                        <th className="pb-4 text-[10px] font-bold text-neutral-900 uppercase tracking-widest text-center">Avg Weight (g)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -114,8 +114,8 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                                         <tr key={log.id} className="border-b border-neutral-50/50 last:border-0 hover:bg-neutral-50/50 transition-colors">
                                             <td className="py-4 text-xs font-bold text-neutral-900">{new Date(log.log_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</td>
                                             <td className="py-4 text-xs font-semibold text-red-500 text-center">{log.mortality || 0}</td>
-                                            <td className="py-4 text-xs font-semibold text-neutral-700 text-center">{log.feed_consumed_kg || 0}</td>
-                                            <td className="py-4 text-xs font-semibold text-emerald-600 text-center">
+                                            <td className="py-4 text-xs font-semibold text-neutral-700 text-center">{log.bags_used || 0}</td>
+                                            <td className="py-4 text-xs font-semibold text-green-900 text-center">
                                                 {log.avg_weight_g ? (log.avg_weight_g > 10000 ? Math.round(log.avg_weight_g / 1000) : log.avg_weight_g) : '--'}
                                             </td>
                                         </tr>
@@ -129,16 +129,16 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                         </div>
                     </section>
 
-                    <section className="bg-white rounded-3xl border border-neutral-100 p-8 shadow-sm">
+                    <section className="p-8">
                         <h2 className="text-xl font-bold text-neutral-900 mb-6 flex items-center gap-2">
                             <Info className="w-5 h-5 text-neutral-400" />
                             Source Breakdown
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             {typedSources.length > 0 ? typedSources.map(source => (
-                                <div key={source.id} className="p-6 rounded-2xl bg-neutral-50 border border-neutral-100">
-                                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{source.supplier_name}</p>
-                                    <p className="text-2xl font-bold text-neutral-900">{source.count.toLocaleString()} <span className="text-sm text-neutral-400 font-medium tracking-tight">Chicks</span></p>
+                                <div key={source.id} className="p-2">
+                                    <p className="text-[10px] font-bold text-neutral-900 uppercase tracking-widest mb-1">{source.supplier_name}</p>
+                                    <p className="text-2xl font-bold text-neutral-900">{source.count.toLocaleString()} <span className="text-sm text-neutral-900 font-medium tracking-tight">Chicks</span></p>
                                 </div>
                             )) : (
                                 <div className="col-span-full py-10 text-center text-neutral-400 italic text-sm">
@@ -151,7 +151,7 @@ export default async function CropDetailsPage({ params }: { params: { id: string
 
                 <div className="space-y-8">
                     {!isCompleted && (
-                        <div className="bg-white rounded-3xl border border-neutral-100 p-8 shadow-sm">
+                        <div className="p-8 border border-neutral-400 rounded-md">
                             <h3 className="text-lg font-bold text-neutral-900 mb-6 flex items-center gap-2">
                                 <Plus className="w-5 h-5" />
                                 Daily Tracking
@@ -160,8 +160,8 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                         </div>
                     )}
 
-                    <div className="bg-neutral-900 text-white rounded-3xl p-8 shadow-xl">
-                        <h3 className="text-lg font-bold mb-6 tracking-tight">Quick Review</h3>
+                    <div className="bg-neutral-900 text-white rounded-md p-8">
+                        <h3 className="text-lg font-bold mb-6 tracking-tight uppercase">Quick Review</h3>
                         <div className="space-y-6">
                             <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
                                 <div className="flex items-center gap-3">
@@ -187,8 +187,8 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-3xl border border-neutral-100 p-8 shadow-sm">
-                        <h2 className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mb-4">Internal Notes</h2>
+                    <div className="rounded-md border border-neutral-400 p-8">
+                        <h2 className="text-[10px] font-black text-neutral-900 uppercase tracking-[0.2em] mb-4">Internal Notes</h2>
                         <p className="text-neutral-600 leading-relaxed text-sm whitespace-pre-wrap italic">
                             {typedCrop.notes || "No additional notes recorded for this crop."}
                         </p>

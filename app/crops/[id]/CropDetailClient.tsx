@@ -12,7 +12,7 @@ export function DailyLogModal({ cropId }: { cropId: string }) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="w-full bg-neutral-900 hover:bg-black text-white py-4 rounded-xl text-xs font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+                className="w-full bg-neutral-900 hover:bg-black text-white py-4 text-xs font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded-md"
             >
                 <ClipboardList className="w-4 h-4" /> Record Daily Log
             </button>

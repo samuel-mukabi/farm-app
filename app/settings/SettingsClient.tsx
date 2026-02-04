@@ -33,7 +33,7 @@ export function ProfileForm({ initialData }: { initialData: { full_name?: string
                         name="full_name"
                         defaultValue={initialData.full_name}
                         placeholder=""
-                        className="px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-md text-neutral-900 focus:outline-none focus:ring-neutral-900/5 focus:bg-white transition-all font-bold placeholder:text-neutral-300"
+                        className="px-6 py-4 bg-neutral-50 border-b border-black text-neutral-900 focus:outline-none font-bold placeholder:text-neutral-300"
                     />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -43,7 +43,7 @@ export function ProfileForm({ initialData }: { initialData: { full_name?: string
                         name="farm_name"
                         defaultValue={initialData.farm_name}
                         placeholder=""
-                        className="px-6 py-4 bg-neutral-50 border border-neutral-100 rounded-md text-neutral-900 focus:outline-none focus:ring-neutral-900/5 focus:bg-white transition-all font-bold placeholder:text-neutral-300"
+                        className="px-6 py-4 bg-neutral-50 border-b border-black text-neutral-900 focus:outline-none font-bold placeholder:text-neutral-300"
                     />
                 </div>
             </div>
@@ -59,7 +59,7 @@ export function ProfileForm({ initialData }: { initialData: { full_name?: string
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-10 py-4 bg-neutral-900 text-white rounded-md font-black hover:bg-black transition-all shadow-xl flex items-center gap-3 disabled:bg-neutral-400 uppercase tracking-widest text-[10px] cursor-pointer"
+                    className="px-6 py-3 bg-neutral-900 text-white font-black hover:bg-black transition-all flex items-center gap-3 disabled:bg-neutral-400 uppercase tracking-widest text-[10px] cursor-pointer"
                 >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : ""}
                     Save
