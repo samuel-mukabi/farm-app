@@ -37,18 +37,25 @@ export async function middleware(request: NextRequest) {
     // https://supabase.com/docs/guides/auth/server-side/nextjs
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Redirect authenticated users from public pages to dashboard
+    // Redirect authenticated users away from auth pages, but ALLOW landing page (/)
     if (user && (
-        pathname === '/' ||
         pathname.startsWith('/login') ||
         pathname.startsWith('/register')
     )) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
+        const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
+        supabaseResponse.cookies.getAll().forEach(cookie => {
+            redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+        })
+        return redirectResponse
     }
 
     // Redirect unauthenticated users from protected pages to login
     if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/auth') && pathname !== '/') {
-        return NextResponse.redirect(new URL('/login', request.url))
+        const redirectResponse = NextResponse.redirect(new URL('/login', request.url))
+        supabaseResponse.cookies.getAll().forEach(cookie => {
+            redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+        })
+        return redirectResponse
     }
 
     return supabaseResponse

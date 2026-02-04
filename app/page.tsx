@@ -1,7 +1,20 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight, Cpu } from "lucide-react";
+import { useEffect, useState } from "react";
+import {createClient} from "@/supabase/client";
 
 export default function LandingPage() {
+    const [session, setSession] = useState<any>(null);
+    const supabase = createClient();
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data }) => {
+            setSession(data.session);
+        });
+    }, []);
+
     return (
         <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-amber-500 selection:text-black font-sans overflow-x-hidden">
             {/* Navigation */}
@@ -12,15 +25,18 @@ export default function LandingPage() {
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <Link href="/login" className="px-6 py-3 text-[11px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-colors">
-                        Log In
+                    <Link
+                        href={session ? "/dashboard" : "/login"}
+                        className="py-4 px-3 text-base font-black uppercase tracking-widest [text-shadow:0_0_20px_rgba(255,255,255,0.8)] md:text-white md:text-shadow-none transition-all md:hover:[text-shadow:0_0_20px_rgba(255,255,255,0.8)]"
+                    >
+                        {session ? "Dashboard" : "Log In"}
                     </Link>
-                    <Link href="/register" className="bg-white text-black px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-[#0A0A0A] hover:text-white transition-all duration-300 transform active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                    <Link href="/register"
+                          className={`${!session ? "bg-white text-black px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-[#0A0A0A] hover:text-white transition-all duration-300 transform active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]" : "hidden"}`}>
                         Sign Up
                     </Link>
                 </div>
             </nav>
-
             {/* Hero Section */}
             <main className="relative z-10 pt-20 md:pt-40 pb-40 px-6 max-w-350 mx-auto min-h-210">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
