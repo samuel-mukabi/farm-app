@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Info, CheckCircle2, AlertCircle, LucideIcon, TrendingUp, ClipboardList, Plus } from "lucide-react";
 import { createClient } from "@/supabase/server";
 import { Crop, ChickSource, DailyLog } from "@/types/farm";
-import { harvestCrop } from "./actions";
 import { DailyLogModal } from "./CropDetailClient";
 import { HarvestModal } from "./HarvestModal";
 
@@ -52,10 +51,6 @@ export default async function CropDetailsPage({ params }: { params: { id: string
     const isCompleted = typedCrop.status === 'Completed';
     const presentChicks = isCompleted ? 0 : (typedCrop.total_chicks - totalMortality);
 
-    const handleHarvest = async () => {
-        "use server"
-        await harvestCrop(id);
-    };
 
     return (
         <div className="p-4 md:p-8 max-w-6xl mx-auto">
@@ -83,10 +78,10 @@ export default async function CropDetailsPage({ params }: { params: { id: string
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-                <DetailCard label="Present Chicks" value={presentChicks.toLocaleString()} icon={TrendingUp} colorClass="text-blue-500" />
+            <div className="flex flex-row col-span-1 md:col-span-2 lg:col-span-4 gap-4 mb-12">
+                {!isCompleted && <DetailCard label="Present Chicks" value={presentChicks.toLocaleString()} icon={TrendingUp} colorClass="text-blue-500"/>}
                 <DetailCard label="Arrival Date" value={new Date(typedCrop.arrival_date).toLocaleDateString(undefined, { dateStyle: 'medium' })} icon={Calendar} />
-                <DetailCard label="Expected Harvest" value={typedCrop.expected_harvest_date ? new Date(typedCrop.expected_harvest_date).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'N/A'} icon={Calendar} />
+                <DetailCard label={typedCrop.actual_harvest_date ? "Actual Harvest" : "Expected Harvest"} value={typedCrop.actual_harvest_date ? new Date(typedCrop.actual_harvest_date).toLocaleDateString(undefined, { dateStyle: 'medium' }) : new Date(typedCrop.expected_harvest_date!).toLocaleDateString(undefined, { dateStyle: 'medium'})} icon={Calendar} />
                 <DetailCard label="Mortality" value={`${totalMortality} (${((totalMortality / typedCrop.total_chicks) * 100).toFixed(1)}%)`} icon={AlertCircle} colorClass="text-red-500" />
             </div>
 

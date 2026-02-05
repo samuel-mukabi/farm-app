@@ -9,7 +9,7 @@ interface HarvestModalProps {
     liveBirds: number;
 }
 
-export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
+export function HarvestModal({ cropId}: HarvestModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -25,10 +25,6 @@ export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
         setError(null);
 
         try {
-            // Calculate averages based on total weight / (liveBirds / 3)
-            // Input is in kg, stored average is in grams
-            const birdsPerGroup = Math.max(1, liveBirds / 3);
-
             const calculateAverage = (avgG: string) => {
                 if (!avgG) return undefined;
                 return parseFloat(avgG);
@@ -51,7 +47,7 @@ export function HarvestModal({ cropId, liveBirds }: HarvestModalProps) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-neutral-900 hover:bg-black text-white px-8 py-4 rounded-xl text-xs font-bold transition-all shadow-lg hover:shadow-xl uppercase tracking-widest flex items-center gap-2 group"
+                className="bg-black text-white px-4 py-3 rounded-md text-sm font-bold transition-all uppercase tracking-widest flex items-center gap-2 group active:scale-[0.98]"
             >
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
                 Harvest Crop
